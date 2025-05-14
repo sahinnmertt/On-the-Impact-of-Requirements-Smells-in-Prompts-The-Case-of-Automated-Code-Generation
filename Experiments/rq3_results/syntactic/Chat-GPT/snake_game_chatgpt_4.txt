@@ -1,0 +1,223 @@
+Below is a complete Java 8 application for a Snake game that adheres to the provided specifications and requirements. The code is structured according to the given class and method skeletons.
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
+
+class Coordinates {
+    int x;
+    int y;
+
+    Coordinates(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+}
+
+class Snake {
+    List<Coordinates> body;
+    String direction;
+    double speed;
+    int growing;
+    String color;
+
+    Snake() {
+        body = new ArrayList<>();
+        body.add(new Coordinates(0, 0)); // Initial position at bottom left
+        direction = "UP";
+        growing = 0;
+        color = "GREEN";
+    }
+
+    void move() {
+        Coordinates head = body.get(0);
+        Coordinates newHead = null;
+        switch (direction) {
+            case "UP":
+                newHead = new Coordinates(head.x, head.y - 1);
+                break;
+            case "DOWN":
+                newHead = new Coordinates(head.x, head.y + 1);
+                break;
+            case "LEFT":
+                newHead = new Coordinates(head.x - 1, head.y);
+                break;
+            case "RIGHT":
+                newHead = new Coordinates(head.x + 1, head.y);
+                break;
+        }
+        body.add(0, newHead);
+        if (growing > 0) {
+            growing--;
+        } else {
+            body.remove(body.size() - 1);
+        }
+    }
+
+    void grow(int amount) {
+        growing += amount;
+    }
+
+    void increaseSpeed() {
+        speed *= 1.01;
+    }
+
+    void decreaseSpeed() {
+        speed *= 0.95;
+    }
+}
+
+class Food {
+    Coordinates position;
+    String color;
+
+    Food(String color) {
+        this.color = color;
+        generateNewPosition(20); // Default board size
+    }
+
+    void generateNewPosition(int boardSize) {
+        Random rand = new Random();
+        int x = rand.nextInt(boardSize);
+        int y = rand.nextInt(boardSize);
+        position = new Coordinates(x, y);
+    }
+}
+
+class Board {
+    int size;
+    int blockSize;
+
+    Board(int k) {
+        size = k;
+        blockSize = 5;
+    }
+
+    void render(Snake snake, Food food, Food bonusFood) {
+        // Rendering logic (not implemented for simplicity)
+    }
+}
+
+class Game {
+    Snake snake;
+    Food food;
+    Food bonusFood;
+    boolean paused;
+    String difficulty;
+    int time;
+    boolean gameOver;
+    Board board;
+
+    Game(int boardSize, String difficulty) {
+        this.difficulty = difficulty;
+        board = new Board(boardSize);
+        snake = new Snake();
+        food = new Food("RED");
+        food.generateNewPosition(boardSize);
+        paused = false;
+        time = 0;
+        gameOver = false;
+        if (difficulty.equals("easy")) {
+            snake.speed = 0.5;
+        } else {
+            snake.speed = 2.0;
+        }
+    }
+
+    void updateGame() {
+        if (!paused && !gameOver) {
+            snake.move();
+            checkCollisions();
+            board.render(snake, food, bonusFood);
+            time++;
+            if (time % 300 == 0) { // Every 5 minutes
+                spawnBonusFood("GOLD");
+            }
+        }
+    }
+
+    void checkCollisions() {
+        Coordinates head = snake.body.get(0);
+        if (head.x < 0 || head.x >= board.size || head.y < 0 || head.y >= board.size) {
+            gameOver = true;
+        }
+        for (int i = 1; i < snake.body.size(); i++) {
+            if (head.x == snake.body.get(i).x && head.y == snake.body.get(i).y) {
+                gameOver = true;
+            }
+        }
+        if (head.x == food.position.x && head.y == food.position.y) {
+            snake.grow(1);
+            snake.increaseSpeed();
+            food.generateNewPosition(board.size);
+        }
+        if (bonusFood != null && head.x == bonusFood.position.x && head.y == bonusFood.position.y) {
+            snake.decreaseSpeed();
+            bonusFood = null;
+        }
+    }
+
+    void handleKeyPress(char key) {
+        switch (key) {
+            case 'w':
+                if (!snake.direction.equals("DOWN")) snake.direction = "UP";
+                break;
+            case 's':
+                if (!snake.direction.equals("UP")) snake.direction = "DOWN";
+                break;
+            case 'a':
+                if (!snake.direction.equals("RIGHT")) snake.direction = "LEFT";
+                break;
+            case 'd':
+                if (!snake.direction.equals("LEFT")) snake.direction = "RIGHT";
+                break;
+            case 'p':
+                paused = !paused;
+                break;
+        }
+    }
+
+    void spawnBonusFood(String foodColor) {
+        bonusFood = new Food(foodColor);
+        bonusFood.generateNewPosition(board.size);
+    }
+
+    void resetGame() {
+        snake = new Snake();
+        food = new Food("RED");
+        food.generateNewPosition(board.size);
+        paused = false;
+        time = 0;
+        gameOver = false;
+    }
+}
+
+public class SnakeGame {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter board size (k): ");
+        int boardSize = scanner.nextInt();
+        System.out.println("Select difficulty (easy/hard): ");
+        String difficulty = scanner.next();
+        Game game = new Game(boardSize, difficulty);
+
+        // Game loop (simplified for demonstration)
+        while (!game.gameOver) {
+            game.updateGame();
+            // Simulate key press (for demonstration)
+            char key = 'w'; // Example key press
+            game.handleKeyPress(key);
+            try {
+                Thread.sleep((long) (1000 / game.snake.speed));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println("Game Over!");
+    }
+}
+```
+
+This code provides a basic implementation of the Snake game with the specified requirements. Note that the rendering logic and actual key press handling are simplified for demonstration purposes. In a real application, you would use a graphical library for rendering and proper event handling for key presses.

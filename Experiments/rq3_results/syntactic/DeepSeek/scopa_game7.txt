@@ -1,0 +1,328 @@
+Here's the complete implementation of the Scopa card game in Java 8, following all the specified requirements:
+
+```java
+import java.util.*;
+import java.util.stream.Collectors;
+
+class Card {
+    String suit;
+    int value;
+
+    Card(String suit, int value) {
+        this.suit = suit;
+        this.value = value;
+    }
+
+    int getValue() {
+        return value;
+    }
+
+    String getSuit() {
+        return suit;
+    }
+
+    @Override
+    public String toString() {
+        return value + " of " + suit;
+    }
+}
+
+class Player {
+    String name;
+    int score;
+    int specialPoints;
+    List<Card> hand;
+    List<Card> discardPile;
+
+    Player(String name) {
+        this.name = name;
+        this.score = 0;
+        this.specialPoints = 0;
+        this.hand = new ArrayList<>();
+        this.discardPile = new ArrayList<>();
+    }
+
+    Card playCard(int cardIndex) {
+        return hand.remove(cardIndex);
+    }
+
+    void addToDiscardPile(List<Card> capturedCards) {
+        discardPile.addAll(capturedCards);
+    }
+
+    void clearTableCapture() {
+        specialPoints++;
+    }
+
+    int getTotalCards() {
+        return discardPile.size();
+    }
+
+    int getCoinsCount() {
+        return (int) discardPile.stream().filter(c -> c.getSuit().equals("Coins")).count();
+    }
+
+    boolean hasSevenOfCoins() {
+        return discardPile.stream().anyMatch(c -> c.getSuit().equals("Coins") && c.getValue() == 7);
+    }
+
+    int getSumOfCards() {
+        return discardPile.stream().mapToInt(Card::getValue).sum();
+    }
+}
+
+class Game {
+    List<Player> players;
+    List<Card> deck;
+    List<Card> tableCards;
+    List<Integer> turnOrder;
+    boolean roundOver;
+    boolean gameOver;
+    int roundCount;
+
+    Game() {
+        players = new ArrayList<>();
+        deck = new ArrayList<>();
+        tableCards = new ArrayList<>();
+        turnOrder = new ArrayList<>();
+        roundOver = false;
+        gameOver = false;
+        roundCount = 0;
+    }
+
+    void initializeGame() {
+        // Initialize deck
+        String[] suits = {"Coins", "Cups", "Swords", "Clubs"};
+        for (String suit : suits) {
+            for (int value = 1; value <= 10; value++) {
+                deck.add(new Card(suit, value));
+            }
+        }
+
+        // Shuffle deck
+        Collections.shuffle(deck);
+
+        // Initialize players
+        players.add(new Player("Alice"));
+        players.add(new Player("Bob"));
+        players.add(new Player("Charlie"));
+
+        // Randomize turn order
+        turnOrder = new ArrayList<>(Arrays.asList(0, 1, 2));
+        Collections.shuffle(turnOrder);
+
+        // Deal initial cards
+        dealCards();
+    }
+
+    void dealCards() {
+        // Deal 3 cards to each player
+        for (Player player : players) {
+            player.hand.clear();
+            for (int i = 0; i < 3; i++) {
+                if (!deck.isEmpty()) {
+                    player.hand.add(deck.remove(0));
+                }
+            }
+        }
+
+        // Place 4 cards on the table
+        tableCards.clear();
+        for (int i = 0; i < 4; i++) {
+            if (!deck.isEmpty()) {
+                tableCards.add(deck.remove(0));
+            }
+        }
+    }
+
+    void playTurn(Player player) {
+        if (player.hand.isEmpty()) {
+            if (!deck.isEmpty()) {
+                for (int i = 0; i < 3 && !deck.isEmpty(); i++) {
+                    player.hand.add(deck.remove(0));
+                }
+            } else {
+                return;
+            }
+        }
+
+        // Simple AI: play first card in hand
+        int cardIndex = 0;
+        Card playedCard = player.playCard(cardIndex);
+
+        // Check for matches
+        List<List<Card>> possibleCaptures = findPossibleCaptures(playedCard);
+
+        if (!possibleCaptures.isEmpty()) {
+            // Capture the first possible combination (simple AI)
+            List<Card> captured = possibleCaptures.get(0);
+            player.addToDiscardPile(captured);
+            player.addToDiscardPile(Arrays.asList(playedCard));
+            tableCards.removeAll(captured);
+
+            if (tableCards.isEmpty()) {
+                player.clearTableCapture();
+            }
+        } else {
+            tableCards.add(playedCard);
+        }
+
+        // Check if round should end
+        if (deck.isEmpty() && players.stream().allMatch(p -> p.hand.isEmpty())) {
+            roundOver = true;
+            // Last player to capture gets remaining cards
+            if (!tableCards.isEmpty()) {
+                player.addToDiscardPile(new ArrayList<>(tableCards));
+                tableCards.clear();
+            }
+        }
+    }
+
+    List<List<Card>> findPossibleCaptures(Card card) {
+        List<List<Card>> possibleCaptures = new ArrayList<>();
+        int targetValue = card.getValue();
+
+        // Check single card matches
+        for (Card tableCard : tableCards) {
+            if (tableCard.getValue() == targetValue) {
+                possibleCaptures.add(Arrays.asList(tableCard));
+            }
+        }
+
+        // Check combinations of two cards
+        for (int i = 0; i < tableCards.size(); i++) {
+            for (int j = i + 1; j < tableCards.size(); j++) {
+                if (tableCards.get(i).getValue() + tableCards.get(j).getValue() == targetValue) {
+                    possibleCaptures.add(Arrays.asList(tableCards.get(i), tableCards.get(j)));
+                }
+            }
+        }
+
+        // Check combinations of three cards (if needed)
+        for (int i = 0; i < tableCards.size(); i++) {
+            for (int j = i + 1; j < tableCards.size(); j++) {
+                for (int k = j + 1; k < tableCards.size(); k++) {
+                    if (tableCards.get(i).getValue() + tableCards.get(j).getValue() + tableCards.get(k).getValue() == targetValue) {
+                        possibleCaptures.add(Arrays.asList(tableCards.get(i), tableCards.get(j), tableCards.get(k)));
+                    }
+                }
+            }
+        }
+
+        return possibleCaptures;
+    }
+
+    void handleRoundEnd() {
+        // Calculate round scores
+        calculateFinalScores();
+
+        // Check if game should end
+        if (players.stream().anyMatch(p -> p.score >= 8)) {
+            gameOver = true;
+        } else {
+            // Prepare for new round
+            roundCount++;
+            roundOver = false;
+            initializeGame();
+        }
+    }
+
+    void calculateFinalScores() {
+        // Reset scores for the round
+        for (Player player : players) {
+            player.score = 0;
+        }
+
+        // Add special points (clearing the table)
+        for (Player player : players) {
+            player.score += player.specialPoints;
+            player.specialPoints = 0;
+        }
+
+        // Calculate additional points
+        // 1. Most cards
+        int maxCards = players.stream().mapToInt(Player::getTotalCards).max().orElse(0);
+        players.stream().filter(p -> p.getTotalCards() == maxCards).forEach(p -> p.score++);
+
+        // 2. Most coins
+        int maxCoins = players.stream().mapToInt(Player::getCoinsCount).max().orElse(0);
+        if (maxCoins > 0) {
+            players.stream().filter(p -> p.getCoinsCount() == maxCoins).forEach(p -> p.score++);
+        }
+
+        // 3. Seven of coins
+        players.stream().filter(Player::hasSevenOfCoins).forEach(p -> p.score++);
+
+        // 4. Highest sum of cards
+        int maxSum = players.stream().mapToInt(Player::getSumOfCards).max().orElse(0);
+        players.stream().filter(p -> p.getSumOfCards() == maxSum).forEach(p -> p.score++);
+    }
+
+    void declareWinner() {
+        Player winner = players.stream()
+                .max(Comparator.comparingInt(p -> p.score))
+                .orElse(players.get(0));
+
+        System.out.println("Game over! The winner is " + winner.name + " with " + winner.score + " points!");
+        System.out.println("Final scores:");
+        for (Player player : players) {
+            System.out.println(player.name + ": " + player.score + " points");
+        }
+    }
+}
+
+public class ScopaGame {
+    public static void main(String[] args) {
+        Game game = new Game();
+        game.initializeGame();
+
+        while (!game.gameOver) {
+            System.out.println("\nRound " + (game.roundCount + 1));
+            
+            while (!game.roundOver) {
+                for (int playerIndex : game.turnOrder) {
+                    Player currentPlayer = game.players.get(playerIndex);
+                    System.out.println("\n" + currentPlayer.name + "'s turn");
+                    System.out.println("Table cards: " + game.tableCards);
+                    System.out.println("Hand: " + currentPlayer.hand);
+                    
+                    game.playTurn(currentPlayer);
+                    
+                    System.out.println("After play:");
+                    System.out.println("Table cards: " + game.tableCards);
+                    System.out.println("Collected cards: " + currentPlayer.discardPile.size());
+                    
+                    if (game.roundOver) {
+                        break;
+                    }
+                }
+            }
+            
+            game.handleRoundEnd();
+        }
+        
+        game.declareWinner();
+    }
+}
+```
+
+This implementation includes:
+
+1. All required classes (Player, Card, Game, ScopaGame) with their specified attributes and methods
+2. The complete game logic following all 16 requirements
+3. A simple AI that plays the first card in hand and captures the first possible combination
+4. Proper turn order handling and round management
+5. Score calculation according to the rules
+6. Console output to track the game progress
+
+The game can be run by executing the ScopaGame class, which will simulate a complete game with three players (Alice, Bob, and Charlie) until one player reaches the winning score of 8 points.
+
+The implementation handles all the specified requirements including:
+- Three-player gameplay
+- Random turn order
+- Special points for clearing the table
+- 40-card deck with 4 suits
+- Card capturing mechanics
+- Round and game management
+- Score calculation for multiple criteria
+- Winner declaration
