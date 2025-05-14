@@ -1,0 +1,185 @@
+Below is the complete Java code for the dice game as per your specifications. The code includes all the classes and methods as described in the skeleton, and it implements all the requirements.
+
+```java
+import java.util.*;
+
+class Player {
+    String name;
+    int points;
+    String pointColor;
+    int[] consecutiveRolls;
+
+    Player(String name) {
+        this.name = name;
+        this.points = 0;
+        this.pointColor = "red"; // Default color for player 1
+        this.consecutiveRolls = new int[3];
+    }
+
+    void updatePoints(int diceValue) {
+        if (diceValue == 2) {
+            diceValue *= 3;
+        } else if (diceValue % 2 == 0) {
+            diceValue /= 2;
+        }
+        points += diceValue;
+        updateColor();
+    }
+
+    void updateColor() {
+        if (points > 11) {
+            pointColor = "purple";
+        } else if (points > 5) {
+            pointColor = "yellow";
+        }
+    }
+
+    void resetPoints() {
+        points = 0;
+    }
+}
+
+class Game {
+    List<Player> players;
+    List<Integer> turnOrder;
+    int turnCount;
+    boolean gameOver;
+
+    Game() {
+        players = new ArrayList<>();
+        turnOrder = new ArrayList<>();
+        turnCount = 0;
+        gameOver = false;
+    }
+
+    void initializeGame() {
+        Scanner scanner = new Scanner(System.in);
+        for (int i = 0; i < 3; i++) {
+            System.out.println("Enter name for player " + (i + 1) + ":");
+            String name = scanner.nextLine();
+            while (name.equalsIgnoreCase("Computer")) {
+                System.out.println("Name cannot be Computer. Enter another name:");
+                name = scanner.nextLine();
+            }
+            Player player = new Player(name);
+            if (i == 1) player.pointColor = "green";
+            if (i == 2) player.pointColor = "blue";
+            players.add(player);
+        }
+        turnOrder = Arrays.asList(0, 1, 2);
+        Collections.shuffle(turnOrder);
+    }
+
+    void manageTurn() {
+        Scanner scanner = new Scanner(System.in);
+        for (int i = 0; i < turnOrder.size(); i++) {
+            Player currentPlayer = players.get(turnOrder.get(i));
+            System.out.println(currentPlayer.name + "'s turn. Would you like to skip?");
+            String skip = scanner.nextLine();
+            if (skip.equalsIgnoreCase("yes")) continue;
+
+            int diceValue = rollDice();
+            System.out.println(currentPlayer.name + " rolled a " + diceValue);
+
+            if (diceValue == 1) {
+                System.out.println("Would you like to re-roll?");
+                String reroll = scanner.nextLine();
+                if (reroll.equalsIgnoreCase("yes")) {
+                    diceValue = rollDice();
+                    System.out.println(currentPlayer.name + " re-rolled a " + diceValue);
+                }
+            }
+
+            if (diceValue == 5) {
+                int secondRoll = rollDice();
+                System.out.println(currentPlayer.name + " rolled a 5 and then a " + secondRoll);
+                diceValue *= secondRoll;
+            }
+
+            currentPlayer.updatePoints(diceValue);
+            currentPlayer.consecutiveRolls[turnCount % 3] = diceValue;
+
+            if (diceValue == 6) {
+                i++; // Skip next player's turn
+            }
+
+            if (currentPlayer.consecutiveRolls[0] == currentPlayer.consecutiveRolls[1] &&
+                currentPlayer.consecutiveRolls[1] == currentPlayer.consecutiveRolls[2]) {
+                currentPlayer.resetPoints();
+            }
+
+            System.out.println(currentPlayer.name + " has " + currentPlayer.points + " points.");
+
+            if (checkGameEndConditions()) {
+                gameOver = true;
+                break;
+            }
+        }
+        turnCount++;
+    }
+
+    int rollDice() {
+        return new Random().nextInt(6) + 1;
+    }
+
+    boolean checkGameEndConditions() {
+        if (turnCount >= 12) return true;
+
+        for (Player player : players) {
+            boolean hasMoreThanTenPoints = true;
+            for (Player other : players) {
+                if (player != other && player.points <= other.points + 10) {
+                    hasMoreThanTenPoints = false;
+                    break;
+                }
+            }
+            if (hasMoreThanTenPoints) return true;
+        }
+
+        return false;
+    }
+
+    void declareWinner() {
+        Player winner = players.get(0);
+        for (Player player : players) {
+            if (player.points > winner.points) {
+                winner = player;
+            }
+        }
+        System.out.println("Congratulations " + winner.name + " you won the game! You are the best!");
+    }
+
+    void displayEquality() {
+        Set<Integer> uniquePoints = new HashSet<>();
+        for (Player player : players) {
+            uniquePoints.add(player.points);
+        }
+        if (uniquePoints.size() < players.size()) {
+            System.out.println("Equality!");
+        }
+    }
+
+    void prepareForNextGame() {
+        players.sort(Comparator.comparingInt(p -> p.points));
+        turnOrder.clear();
+        for (int i = 0; i < players.size(); i++) {
+            turnOrder.add(i);
+        }
+    }
+}
+
+public class DiceGame {
+    public static void main(String[] args) {
+        Game game = new Game();
+        game.initializeGame();
+        while (!game.gameOver) {
+            game.manageTurn();
+            game.displayEquality();
+        }
+        game.declareWinner();
+        game.prepareForNextGame();
+    }
+}
+```
+
+This code implements all the specified requirements and follows the structure provided. The game logic is encapsulated within the `Player` and `Game` classes, and the `DiceGame` class contains the `main` method to run the game.

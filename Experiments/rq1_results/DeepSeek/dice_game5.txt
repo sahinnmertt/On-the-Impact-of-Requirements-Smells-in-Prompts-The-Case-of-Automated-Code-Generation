@@ -1,0 +1,299 @@
+Here's the complete Java 8 implementation of the dice game with all 25 requirements:
+
+```java
+import java.util.*;
+import java.util.stream.*;
+
+class Player {
+    String name;
+    int points;
+    String pointColor;
+    int[] consecutiveRolls = new int[3]; // Stores last 3 rolls for requirement 21
+
+    Player(String name) {
+        this.name = name;
+        this.points = 0;
+    }
+
+    void updatePoints(int diceValue) {
+        // Requirement 21: Track consecutive rolls
+        consecutiveRolls[0] = consecutiveRolls[1];
+        consecutiveRolls[1] = consecutiveRolls[2];
+        consecutiveRolls[2] = diceValue;
+        
+        // Check for three same consecutive rolls
+        if (consecutiveRolls[0] == consecutiveRolls[1] && consecutiveRolls[1] == consecutiveRolls[2]) {
+            resetPoints();
+            return;
+        }
+
+        // Requirement 14: Handle special dice values
+        if (diceValue == 2) {
+            points += diceValue * 3;
+        } else if (diceValue % 2 == 0 && diceValue != 2) {
+            points += diceValue / 2;
+        } else {
+            points += diceValue;
+        }
+
+        updateColor();
+    }
+
+    void updateColor() {
+        // Requirements 11, 12, 19: Update point color based on points
+        if (points > 11) {
+            pointColor = "purple";
+        } else if (points > 5) {
+            pointColor = "yellow";
+        } else {
+            // Initial colors are set in Game.initializeGame()
+        }
+    }
+
+    void resetPoints() {
+        points = 0;
+        updateColor();
+    }
+}
+
+class Game {
+    List<Player> players = new ArrayList<>();
+    List<Integer> turnOrder = new ArrayList<>();
+    int turnCount = 0;
+    boolean gameOver = false;
+    Scanner scanner = new Scanner(System.in);
+
+    void initializeGame() {
+        players.clear();
+        turnOrder.clear();
+        turnCount = 0;
+        gameOver = false;
+
+        // Requirement 17: Get player names
+        for (int i = 1; i <= 3; i++) {
+            System.out.print("Enter name for Player " + i + ": ");
+            String name = scanner.nextLine();
+            while (name.equals("Computer")) {
+                System.out.println("Name cannot be Computer");
+                System.out.print("Enter name for Player " + i + ": ");
+                name = scanner.nextLine();
+            }
+            Player player = new Player(name);
+            players.add(player);
+        }
+
+        // Requirement 16: Random turn order
+        for (int i = 0; i < 3; i++) {
+            turnOrder.add(i);
+        }
+        Collections.shuffle(turnOrder);
+
+        // Requirement 11: Set initial colors
+        players.get(0).pointColor = "red";
+        players.get(1).pointColor = "green";
+        players.get(2).pointColor = "blue";
+    }
+
+    void manageTurn() {
+        if (gameOver) return;
+
+        int currentPlayerIndex = turnOrder.get(turnCount % 3);
+        Player currentPlayer = players.get(currentPlayerIndex);
+
+        System.out.println("\n" + currentPlayer.name + "'s turn (Points: " + currentPlayer.points + ", Color: " + currentPlayer.pointColor + ")");
+
+        // Requirement 20: Skip option
+        System.out.print("Would you like to skip? ");
+        String skipChoice = scanner.nextLine().toLowerCase();
+        if (skipChoice.equals("yes")) {
+            System.out.println(currentPlayer.name + " chose to skip their turn.");
+            turnCount++;
+            return;
+        }
+
+        int diceValue = rollDice();
+        System.out.println("Dice rolled: " + diceValue);
+
+        // Requirement 9: Re-roll if dice is 1
+        if (diceValue == 1) {
+            System.out.print("Would you like to re-roll? ");
+            String rerollChoice = scanner.nextLine().toLowerCase();
+            if (rerollChoice.equals("yes")) {
+                diceValue = rollDice();
+                System.out.println("Dice re-rolled: " + diceValue);
+            }
+        }
+
+        // Requirement 18: Special handling for 5
+        if (diceValue == 5) {
+            int secondRoll = rollDice();
+            System.out.println("Second dice rolled (because first was 5): " + secondRoll);
+            diceValue *= secondRoll;
+            System.out.println("Total points from both rolls: " + diceValue);
+        }
+
+        // Save previous points for equality check
+        List<Integer> previousPoints = players.stream().map(p -> p.points).collect(Collectors.toList());
+
+        currentPlayer.updatePoints(diceValue);
+        System.out.println(currentPlayer.name + " now has " + currentPlayer.points + " points");
+
+        // Requirement 15: Check for equality
+        if (!gameOver) {
+            displayEquality(previousPoints);
+        }
+
+        // Requirement 13: Skip next player if rolled 6
+        if (diceValue == 6) {
+            System.out.println("Next player's turn will be skipped because " + currentPlayer.name + " rolled a 6");
+            turnCount++; // Extra increment to skip next player
+        }
+
+        turnCount++;
+        checkGameEndConditions();
+    }
+
+    int rollDice() {
+        return new Random().nextInt(6) + 1;
+    }
+
+    boolean checkGameEndConditions() {
+        // Requirement 7: End after 12 turns
+        if (turnCount >= 12) {
+            gameOver = true;
+            return true;
+        }
+
+        // Requirement 8 & 22: End if one player has 10 more points than others
+        for (Player p : players) {
+            boolean allOthers10Less = true;
+            for (Player other : players) {
+                if (p != other && p.points <= other.points + 10) {
+                    allOthers10Less = false;
+                    break;
+                }
+            }
+            if (allOthers10Less && p.points > 0) {
+                gameOver = true;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void declareWinner() {
+        // Requirement 23: Print all players' points
+        System.out.println("\nGame Over! Final scores:");
+        for (Player p : players) {
+            System.out.println(p.name + ": " + p.points + " points");
+        }
+
+        // Requirement 24: Find player with most points
+        Player winner = Collections.max(players, Comparator.comparingInt(p -> p.points));
+        
+        // Check for tie
+        long winnersCount = players.stream().filter(p -> p.points == winner.points).count();
+        if (winnersCount > 1) {
+            System.out.println("It's a tie! No winner declared.");
+        } else {
+            // Requirement 10: Winner message
+            System.out.println("Congratulations " + winner.name + " you won the game! You are the best!");
+        }
+    }
+
+    void displayEquality(List<Integer> previousPoints) {
+        // Check if any two players now have equal points when they didn't before
+        for (int i = 0; i < players.size(); i++) {
+            for (int j = i + 1; j < players.size(); j++) {
+                if (players.get(i).points == players.get(j).points && 
+                    previousPoints.get(i) != previousPoints.get(j)) {
+                    System.out.println("Equality!");
+                    return;
+                }
+            }
+        }
+    }
+
+    void prepareForNextGame() {
+        // Requirement 25: Order by points from last game ascending
+        players.sort(Comparator.comparingInt(p -> p.points));
+        turnOrder.clear();
+        for (int i = 0; i < 3; i++) {
+            turnOrder.add(i);
+        }
+        
+        // Reset player states
+        for (Player p : players) {
+            p.points = 0;
+            p.consecutiveRolls = new int[3];
+        }
+        
+        // Reset initial colors
+        players.get(0).pointColor = "red";
+        players.get(1).pointColor = "green";
+        players.get(2).pointColor = "blue";
+        
+        turnCount = 0;
+        gameOver = false;
+    }
+}
+
+public class DiceGame {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        Game game = new Game();
+        
+        game.initializeGame();
+        
+        while (true) {
+            while (!game.gameOver) {
+                game.manageTurn();
+            }
+            
+            game.declareWinner();
+            
+            System.out.print("\nWould you like to play again? (yes/no): ");
+            String playAgain = scanner.nextLine().toLowerCase();
+            if (!playAgain.equals("yes")) {
+                break;
+            }
+            
+            game.prepareForNextGame();
+        }
+        
+        System.out.println("Thanks for playing!");
+        scanner.close();
+    }
+}
+```
+
+This implementation includes all 25 requirements:
+
+1. Three-player dice game
+2. Players start with 0 points
+3. Players take turns
+4. Each turn involves dice rolling
+5. Dice values are added to points
+6. Prints dice count and points after each turn
+7. Game ends after 12 turns
+8. Game ends if one player has 10+ points more than others
+9. Re-roll option when rolling 1
+10. Winner congratulation message
+11. Initial colors: red, green, blue
+12. Points > 11 turns color purple
+13. Rolling 6 skips next player
+14. Dice value 2 is tripled, other evens halved
+15. "Equality!" message when points become equal
+16. Random initial turn order
+17. "Computer" name restriction
+18. Rolling 5 means roll again and multiply
+19. Points > 5 turns color yellow
+20. Skip turn option
+21. Three same rolls resets points
+22. Tie requires someone to get ahead to end
+23. Prints all points at game end
+24. Most points wins
+25. Subsequent games order by previous points
+
+The game handles all the specified mechanics including turn management, special dice rules, point tracking, color changes, and game end conditions. It also supports multiple game rounds with proper turn order adjustment between games.
