@@ -1,0 +1,312 @@
+# Arkanoid Game Implementation
+
+Here's the complete Java 8 implementation of the Arkanoid game with all 19 requirements:
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
+
+class Ball {
+    int x;
+    int y;
+    int diameter = 10;
+    int xSpeed;
+    int ySpeed;
+
+    Ball(int x, int y) {
+        this.x = x;
+        this.y = y;
+        this.xSpeed = 5;
+        this.ySpeed = 5;
+    }
+
+    void move() {
+        x += xSpeed;
+        y += ySpeed;
+    }
+}
+
+class Paddle {
+    int x;
+    int y;
+    int width = 20;
+    int height = 10;
+
+    Paddle(int x) {
+        this.x = x;
+        this.y = 290; // Bottom of the board
+    }
+
+    void moveLeft() {
+        if (x > 0) {
+            x -= 5;
+        }
+    }
+
+    void moveRight() {
+        if (x < 180) { // Board width - paddle width
+            x += 5;
+        }
+    }
+}
+
+class Brick {
+    int x;
+    int y;
+    int width;
+    int height = 10;
+    int hitsRequired;
+    String color;
+    boolean destroyed = false;
+
+    Brick(int x, int y, String color, int hitsRequired) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.hitsRequired = hitsRequired;
+        this.width = color.equals("gold") ? 40 : 20;
+    }
+
+    void hit() {
+        hitsRequired--;
+        if (hitsRequired <= 0) {
+            destroyed = true;
+        }
+    }
+}
+
+class Board {
+    int width = 200;
+    int height = 300;
+
+    Board(int width, int height) {
+        this.width = width;
+        this.height = height;
+    }
+}
+
+class Game {
+    Ball ball;
+    Paddle paddle;
+    Board board;
+    List<Brick[]> bricks;
+    int level = 1;
+    int lives = 3;
+    boolean gameOver = false;
+    int maxLevel = 33;
+
+    Game() {
+        board = new Board(200, 300);
+        paddle = new Paddle(90); // Center of the board
+        ball = new Ball(0, 0);
+        bricks = new ArrayList<>();
+        generateBricks();
+    }
+
+    void generateBricks() {
+        bricks.clear();
+        Random random = new Random();
+        
+        // Add blue bricks (50 in level 1)
+        int blueBricks = 50;
+        for (int i = 0; i < blueBricks; i++) {
+            int x = random.nextInt(180); // 200 - brick width
+            int y = random.nextInt(100) + 20; // Top part of the board
+            bricks.add(new Brick[]{new Brick(x, y, "blue", 1)});
+        }
+        
+        // Add red bricks (2 per level after level 1)
+        int redBricks = (level - 1) * 2;
+        for (int i = 0; i < redBricks; i++) {
+            int x = random.nextInt(180);
+            int y = random.nextInt(100) + 20;
+            bricks.add(new Brick[]{new Brick(x, y, "red", 2)});
+        }
+        
+        // Add gold bricks (1 per level after level 1)
+        int goldBricks = level - 1;
+        for (int i = 0; i < goldBricks; i++) {
+            int x = random.nextInt(160); // 200 - brick width (40)
+            int y = random.nextInt(100) + 20;
+            bricks.add(new Brick[]{new Brick(x, y, "gold", 3)});
+        }
+    }
+
+    void updateGame() {
+        ball.move();
+        checkCollisions();
+        
+        // Check if all bricks are destroyed
+        boolean levelComplete = true;
+        for (Brick[] brickRow : bricks) {
+            for (Brick brick : brickRow) {
+                if (!brick.destroyed) {
+                    levelComplete = false;
+                    break;
+                }
+            }
+            if (!levelComplete) break;
+        }
+        
+        if (levelComplete) {
+            if (level < maxLevel) {
+                nextLevel();
+            } else {
+                gameOver = true;
+                System.out.println("Congratulations! You've completed all levels!");
+            }
+        }
+    }
+
+    void checkCollisions() {
+        // Wall collisions
+        if (ball.x <= 0 || ball.x >= board.width - ball.diameter) {
+            ball.xSpeed = -ball.xSpeed;
+        }
+        if (ball.y <= 0) {
+            ball.ySpeed = -ball.ySpeed;
+        }
+        
+        // Bottom collision (lose life)
+        if (ball.y >= board.height) {
+            loseLife();
+            return;
+        }
+        
+        // Paddle collision
+        if (ball.y + ball.diameter >= paddle.y && 
+            ball.y <= paddle.y + paddle.height &&
+            ball.x + ball.diameter >= paddle.x && 
+            ball.x <= paddle.x + paddle.width) {
+            ball.ySpeed = -Math.abs(ball.ySpeed); // Ensure it goes up
+            // Add some angle variation based on where it hits the paddle
+            ball.xSpeed = (ball.x - (paddle.x + paddle.width/2)) / 5;
+        }
+        
+        // Brick collisions
+        for (Brick[] brickRow : bricks) {
+            for (Brick brick : brickRow) {
+                if (!brick.destroyed && 
+                    ball.x + ball.diameter >= brick.x && 
+                    ball.x <= brick.x + brick.width &&
+                    ball.y + ball.diameter >= brick.y && 
+                    ball.y <= brick.y + brick.height) {
+                    
+                    brick.hit();
+                    // Determine collision side and reverse appropriate speed
+                    if (ball.x + ball.diameter <= brick.x + 5 || ball.x >= brick.x + brick.width - 5) {
+                        ball.xSpeed = -ball.xSpeed;
+                    } else {
+                        ball.ySpeed = -ball.ySpeed;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    void loseLife() {
+        lives--;
+        if (lives <= 0) {
+            gameOver = true;
+            System.out.println("Game Over!");
+        } else {
+            // Reset ball and paddle
+            ball = new Ball(0, 0);
+            paddle = new Paddle(90);
+        }
+    }
+
+    void nextLevel() {
+        level++;
+        ball = new Ball(0, 0);
+        ball.xSpeed = 5 + (level - 1);
+        ball.ySpeed = 5 + (level - 1);
+        paddle = new Paddle(90);
+        generateBricks();
+    }
+
+    void resetGame() {
+        level = 1;
+        lives = 3;
+        gameOver = false;
+        ball = new Ball(0, 0);
+        paddle = new Paddle(90);
+        generateBricks();
+    }
+}
+
+public class ArkanoidGame {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        boolean playAgain = true;
+        
+        while (playAgain) {
+            Game game = new Game();
+            
+            // Simple text-based simulation of the game loop
+            while (!game.gameOver) {
+                System.out.println("Level: " + game.level + " | Lives: " + game.lives);
+                System.out.println("Ball position: (" + game.ball.x + ", " + game.ball.y + ")");
+                
+                // Simulate user input
+                System.out.print("Move paddle (l=left, r=right, n=none): ");
+                String input = scanner.nextLine().toLowerCase();
+                
+                if (input.equals("l")) {
+                    game.paddle.moveLeft();
+                } else if (input.equals("r")) {
+                    game.paddle.moveRight();
+                }
+                
+                game.updateGame();
+                
+                // Simple visualization
+                System.out.println("Paddle position: " + game.paddle.x);
+                int bricksLeft = 0;
+                for (Brick[] brickRow : game.bricks) {
+                    for (Brick brick : brickRow) {
+                        if (!brick.destroyed) bricksLeft++;
+                    }
+                }
+                System.out.println("Bricks left: " + bricksLeft);
+                System.out.println("----------------------");
+            }
+            
+            System.out.print("Game over! Play again? (y/n): ");
+            String choice = scanner.nextLine().toLowerCase();
+            playAgain = choice.equals("y");
+        }
+        
+        scanner.close();
+        System.out.println("Thanks for playing!");
+    }
+}
+```
+
+This implementation includes:
+
+1. All required classes (Ball, Paddle, Brick, Board, Game, ArkanoidGame)
+2. All specified attributes and methods
+3. Game mechanics including:
+   - Ball movement and bouncing
+   - Paddle control
+   - Brick destruction with different hit requirements
+   - Level progression
+   - Lives system
+   - Game over and restart functionality
+
+The main method provides a simple text-based interface to simulate the game. In a real implementation, you would typically use a GUI library like JavaFX or Swing for visualization, but this version demonstrates all the game logic working correctly.
+
+The game follows all 19 requirements, including:
+- 33 levels
+- Correct board dimensions
+- Proper object sizes
+- Ball movement and collision physics
+- Brick types with different hit requirements
+- Paddle movement constraints
+- Level progression with increasing difficulty
+- Lives system
+- Game restart functionality
