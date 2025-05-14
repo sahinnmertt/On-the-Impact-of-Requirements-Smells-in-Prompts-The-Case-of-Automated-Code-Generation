@@ -1,0 +1,228 @@
+Below is a complete Java 8 application for a Snake game that adheres to the provided specifications and requirements. The code is structured according to the given class and method skeletons.
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
+
+class Coordinates {
+    int x;
+    int y;
+
+    Coordinates(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+}
+
+class Snake {
+    List<Coordinates> body;
+    String direction;
+    double speed;
+    int growing;
+    String color;
+
+    Snake() {
+        body = new ArrayList<>();
+        body.add(new Coordinates(0, 0)); // Initial position at bottom left
+        direction = "UP";
+        speed = 0.5; // Initial speed for easy difficulty
+        growing = 0;
+        color = "green";
+    }
+
+    void move() {
+        Coordinates head = body.get(0);
+        Coordinates newHead = null;
+        switch (direction) {
+            case "UP":
+                newHead = new Coordinates(head.x, head.y - 1);
+                break;
+            case "DOWN":
+                newHead = new Coordinates(head.x, head.y + 1);
+                break;
+            case "LEFT":
+                newHead = new Coordinates(head.x - 1, head.y);
+                break;
+            case "RIGHT":
+                newHead = new Coordinates(head.x + 1, head.y);
+                break;
+        }
+        body.add(0, newHead);
+        if (growing > 0) {
+            growing--;
+        } else {
+            body.remove(body.size() - 1);
+        }
+    }
+
+    void grow(int amount) {
+        growing += amount;
+    }
+
+    void increaseSpeed() {
+        speed *= 1.01;
+    }
+
+    void decreaseSpeed() {
+        speed *= 0.95;
+    }
+}
+
+class Food {
+    Coordinates position;
+    String color;
+
+    Food(String color) {
+        this.color = color;
+        generateNewPosition(10); // Default board size for initialization
+    }
+
+    void generateNewPosition(int boardSize) {
+        Random rand = new Random();
+        position = new Coordinates(rand.nextInt(boardSize), rand.nextInt(boardSize));
+    }
+}
+
+class Board {
+    int size;
+    int blockSize;
+
+    Board(int k) {
+        size = k;
+        blockSize = 10; // Arbitrary block size for rendering
+    }
+
+    void render(Snake snake, Food food, Food bonusFood) {
+        // Rendering logic would go here, but for simplicity, we will just print positions
+        System.out.println("Snake Position: " + snake.body.get(0).x + ", " + snake.body.get(0).y);
+        System.out.println("Food Position: " + food.position.x + ", " + food.position.y);
+        if (bonusFood != null) {
+            System.out.println("Bonus Food Position: " + bonusFood.position.x + ", " + bonusFood.position.y);
+        }
+    }
+}
+
+class Game {
+    Snake snake;
+    Food food;
+    Food bonusFood;
+    boolean paused;
+    String difficulty;
+    int time;
+    boolean gameOver;
+    Board board;
+
+    Game(int boardSize, String difficulty) {
+        this.difficulty = difficulty;
+        board = new Board(boardSize);
+        snake = new Snake();
+        food = new Food("red");
+        food.generateNewPosition(boardSize);
+        paused = false;
+        time = 0;
+        gameOver = false;
+    }
+
+    void updateGame() {
+        if (!paused && !gameOver) {
+            snake.move();
+            checkCollisions();
+            board.render(snake, food, bonusFood);
+        }
+    }
+
+    void checkCollisions() {
+        Coordinates head = snake.body.get(0);
+        // Check wall collision
+        if (head.x < 0 || head.x >= board.size || head.y < 0 || head.y >= board.size) {
+            gameOver = true;
+            System.out.println("Game Over! Snake hit the wall.");
+            return;
+        }
+        // Check self collision
+        for (int i = 1; i < snake.body.size(); i++) {
+            if (head.x == snake.body.get(i).x && head.y == snake.body.get(i).y) {
+                gameOver = true;
+                System.out.println("Game Over! Snake hit itself.");
+                return;
+            }
+        }
+        // Check food collision
+        if (head.x == food.position.x && head.y == food.position.y) {
+            snake.grow(1);
+            snake.increaseSpeed();
+            food.generateNewPosition(board.size);
+            spawnBonusFood("blue");
+        }
+        // Check bonus food collision
+        if (bonusFood != null && head.x == bonusFood.position.x && head.y == bonusFood.position.y) {
+            if (bonusFood.color.equals("blue")) {
+                snake.grow(3);
+            } else if (bonusFood.color.equals("golden")) {
+                snake.decreaseSpeed();
+            }
+            bonusFood = null;
+        }
+    }
+
+    void handleKeyPress(char key) {
+        switch (key) {
+            case 'w':
+                if (!snake.direction.equals("DOWN")) snake.direction = "UP";
+                break;
+            case 's':
+                if (!snake.direction.equals("UP")) snake.direction = "DOWN";
+                break;
+            case 'a':
+                if (!snake.direction.equals("RIGHT")) snake.direction = "LEFT";
+                break;
+            case 'd':
+                if (!snake.direction.equals("LEFT")) snake.direction = "RIGHT";
+                break;
+            case 'p':
+                paused = !paused;
+                break;
+        }
+    }
+
+    void spawnBonusFood(String foodColor) {
+        if (bonusFood == null) {
+            bonusFood = new Food(foodColor);
+            bonusFood.generateNewPosition(board.size);
+        }
+    }
+
+    void resetGame() {
+        snake = new Snake();
+        food = new Food("red");
+        food.generateNewPosition(board.size);
+        bonusFood = null;
+        paused = false;
+        gameOver = false;
+    }
+}
+
+public class SnakeGame {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter board size (k): ");
+        int boardSize = scanner.nextInt();
+        System.out.println("Select difficulty (easy/hard): ");
+        String difficulty = scanner.next();
+
+        Game game = new Game(boardSize, difficulty);
+
+        while (!game.gameOver) {
+            game.updateGame();
+            // Simulate key press for testing
+            char key = scanner.next().charAt(0);
+            game.handleKeyPress(key);
+        }
+        scanner.close();
+    }
+}
+```
+
+This code provides a basic implementation of the Snake game with the specified requirements. The game logic is implemented, but note that the rendering and real-time input handling are simplified for demonstration purposes. In a real application, you would use a graphical library for rendering and handle keyboard input asynchronously.

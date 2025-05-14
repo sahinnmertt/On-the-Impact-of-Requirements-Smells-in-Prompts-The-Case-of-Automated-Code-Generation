@@ -1,0 +1,121 @@
+Develop a Java 8 application for a dice game involving three players. The game must follow the provided specifications and implement all 25 requirements described at the end.
+You must implement all the described classes and methods exactly as structured in the skeleton code. The game should be fully functional and adhere to all mechanics and rules.
+You must provide the entire code in one file.
+All attributes and methods must be public. The Player and Game classes must not use public/private specifications explicitly, meaning they should be implemented as "class Player", "class Game".
+Classes and Methods Design
+1. Player Class
+Attributes:
+
+
+name (String): The name of the player.
+points (int): The accumulated points of the player.
+pointColor (String): Represents the player's status through color.
+consecutiveRolls (int[]): Tracks the number of consecutive rolls, especially for determining specific game conditions.
+Methods:
+Constructor: Player(String name) {    this.name = name;}
+
+
+updatePoints(int diceValue): Updates the player's points based on the dice value rolled. This method also handles specific rules such as tripling, halving, or any other dice-related rules.
+
+
+Inputs: int diceValue - The value obtained from the dice roll.
+Outputs: void - This method updates the points attribute directly.
+Implements: Requirements 5, 14, 21.
+updateColor(): Updates the player's point color based on the current points. The color changes when crossing certain thresholds, which are predefined in the game rules.
+
+
+Inputs: None.
+Outputs: void - Directly modifies the pointColor attribute.
+Implements: Requirements 11, 12, 19.
+resetPoints(): Resets the player's points to zero, typically triggered under specific game conditions.
+
+
+Inputs: None.
+Outputs: void - Resets the points attribute to 0.
+Implements: Requirement 21.
+2. Game Class
+Attributes:
+
+
+players (List): A list of players participating in the game.
+turnOrder (List int): The order in which players will take their turns, which can change under certain game conditions.
+turnCount (int): Counts the number of turns that have occurred in the game.
+gameOver (boolean): Indicates whether the game has ended.
+
+Methods:
+Constructor: default.
+
+
+
+initializeGame(): Sets up the game by initializing players, setting the initial turn order, and preparing any other initial game state.
+
+
+Inputs: None.
+Outputs: void - Prepares the game environment, sets initial values.
+Implements: Requirements 1, 2, 11,16, 17.
+manageTurn(): Manages the actions during a player's turn, including dice rolling, applying dice results, and handling special conditions like rerolls or skips. Skip option must be printed as “Would you like to skip?” and when input is “yes”, it skips. Reroll option must be printed as “Would you like to re-roll?” and when input is “yes”, it rerolls.
+
+
+Inputs: None.
+Outputs: void - Conducts the operations needed for a single turn, updates turnCount, possibly alters gameOver status.
+Implements: Requirements 3, 4, 5, 6, 9, 13,18, 20, 21.
+rollDice(): Simulates rolling a dice.
+
+
+Inputs: None.
+Outputs: int - Returns the value of the dice roll.
+Implements:
+checkGameEndConditions(): Evaluates whether the game should end based on the current points, the number of turns, or other specified end-game conditions.
+
+
+Inputs: None.
+Outputs: boolean- Returns true if the game should end, false otherwise, alters gameOver status too.
+Implements: Requirements 7, 8, 22, 24.
+declareWinner(): Determines and announces the winner based on who has the most points at the end of the game.
+
+
+Inputs: None.
+Outputs: Void- Print every requirement condition.
+Implements: Requirements 10, 23
+displayEquality(): Checks the 15. requirement condition
+
+
+Inputs: None.
+Outputs: void - Must print the message directly according to requirement.
+Implements: Requirement 15.
+prepareForNextGame(): Sets up the game for a new round, rearranging players based on the previous game's points if necessary.
+
+
+Inputs: None.
+Outputs: void - Rearranges turnOrder based on points.
+Implements: Requirement 25.
+3. DiceGame Class
+	This is the class where you run the game with the main function.
+
+Requirements:
+
+1.A dice-throwing game for three players.
+2.Every player starts with 0 points.
+3.The players take turns.
+4.In each turn, a player must throw a dice.
+5.The dice count gets added to the player's points.
+6.After each turn, the system prints the dice count and the player points.
+7.The game ends after 12 turns.
+8.The game also terminates if one player has significantly more points than the others.
+9.If and only if the dice count is 1, it must be decided if the player re-rolls the dice instead.
+10.There will be some sort of congratulations for the winner.
+11.The player point colors shall always be red, green, and blue for player 1, player 2, and player 3 respectively.
+12.If a player's points are sufficient to win, his point color shall turn purple.
+13.If the current player throws a 6, the next player's turn must not continue.
+14.If the dice count is 2, it shall be tripled. If the dice count is even, it shall be halved
+15.The game shall check the players' points at any point in the game. If they turn equal, it shall print: "Equality!".
+16.The players' turn order must be decided at the beginning of the game.
+17.Names shall be entered for each player. If "Computer" is entered, the system shall print "Name cannot be Computer" and ask for the name again.
+18.If the dice count is high, throw again and multiply both dice counts.
+19.When a player's points get above 5 points, his point color shall turn yellow.
+20.In each turn, the player could skip his turn.
+21.If a player throws the same value multiple times in a row, his points are reset to 0.
+22.If two players have the same amount of points, the game cannot end until one player has more points than the other.
+23.If needed, the system can print the players' points and the winner after a game has ended.
+24.After the game has ended, one player shall be the winner.
+25.If the players decide to play again, instead of choosing the player order randomly, the players shall be ordered in a certain way.

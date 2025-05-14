@@ -1,0 +1,188 @@
+Below is a complete Java 8 application for an Arkanoid game that adheres to the provided specifications and requirements. The code is structured according to the class and method skeletons you provided.
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
+
+class Ball {
+    int x, y, diameter = 10, xSpeed = 5, ySpeed = 5;
+
+    Ball(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    void move() {
+        x += xSpeed;
+        y += ySpeed;
+    }
+}
+
+class Paddle {
+    int x, y, width = 20, height = 10;
+
+    Paddle(int x) {
+        this.x = x;
+        this.y = 290; // Bottom of the board
+    }
+
+    void moveLeft() {
+        if (x > 0) x -= 5;
+    }
+
+    void moveRight() {
+        if (x < 180) x += 5; // 200 - 20 (paddle width)
+    }
+}
+
+class Brick {
+    int x, y, width, height, hitsRequired;
+    String color;
+    boolean destroyed = false;
+
+    Brick(int x, int y, String color, int hitsRequired) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.hitsRequired = hitsRequired;
+        this.width = (hitsRequired == 1) ? 20 : 40; // Single or double size
+        this.height = 10;
+    }
+
+    void hit() {
+        hitsRequired--;
+        if (hitsRequired <= 0) destroyed = true;
+    }
+}
+
+class Board {
+    int width, height;
+
+    Board(int width, int height) {
+        this.width = width;
+        this.height = height;
+    }
+}
+
+class Game {
+    Ball ball;
+    Paddle paddle;
+    Board board;
+    List<Brick> bricks;
+    int level = 1, lives = 3, maxLevel = 33;
+    boolean gameOver = false;
+
+    Game() {
+        board = new Board(200, 300);
+        resetGame();
+    }
+
+    void generateBricks() {
+        bricks = new ArrayList<>();
+        Random rand = new Random();
+        for (int i = 0; i < 50; i++) {
+            bricks.add(new Brick(rand.nextInt(180), rand.nextInt(150), "blue", 1));
+        }
+        for (int i = 0; i < level * 2; i++) {
+            bricks.add(new Brick(rand.nextInt(180), rand.nextInt(150), "red", 2));
+        }
+        for (int i = 0; i < level; i++) {
+            bricks.add(new Brick(rand.nextInt(180), rand.nextInt(150), "gold", 3));
+        }
+    }
+
+    void updateGame() {
+        ball.move();
+        checkCollisions();
+        if (bricks.stream().allMatch(b -> b.destroyed)) {
+            nextLevel();
+        }
+    }
+
+    void checkCollisions() {
+        if (ball.x <= 0 || ball.x >= board.width - ball.diameter) ball.xSpeed *= -1;
+        if (ball.y <= 0) ball.ySpeed *= -1;
+        if (ball.y >= board.height - ball.diameter) loseLife();
+
+        if (ball.y + ball.diameter >= paddle.y && ball.x >= paddle.x && ball.x <= paddle.x + paddle.width) {
+            ball.ySpeed *= -1;
+        }
+
+        for (Brick brick : bricks) {
+            if (!brick.destroyed && ball.x + ball.diameter >= brick.x && ball.x <= brick.x + brick.width &&
+                ball.y + ball.diameter >= brick.y && ball.y <= brick.y + brick.height) {
+                brick.hit();
+                ball.ySpeed *= -1;
+            }
+        }
+    }
+
+    void loseLife() {
+        lives--;
+        if (lives <= 0) {
+            gameOver = true;
+        } else {
+            resetLevel();
+        }
+    }
+
+    void nextLevel() {
+        if (level < maxLevel) {
+            level++;
+            ball.xSpeed += 1;
+            ball.ySpeed += 1;
+            resetLevel();
+        } else {
+            gameOver = true;
+        }
+    }
+
+    void resetLevel() {
+        ball = new Ball(0, 0);
+        paddle = new Paddle(90);
+        generateBricks();
+    }
+
+    void resetGame() {
+        level = 1;
+        lives = 3;
+        gameOver = false;
+        resetLevel();
+    }
+}
+
+public class ArkanoidGame {
+    public static void main(String[] args) {
+        Game game = new Game();
+        Scanner scanner = new Scanner(System.in);
+
+        while (!game.gameOver) {
+            game.updateGame();
+            System.out.println("Level: " + game.level + " Lives: " + game.lives);
+            System.out.println("Press 'a' to move left, 'd' to move right, 'q' to quit.");
+            String input = scanner.nextLine();
+            if (input.equals("a")) {
+                game.paddle.moveLeft();
+            } else if (input.equals("d")) {
+                game.paddle.moveRight();
+            } else if (input.equals("q")) {
+                break;
+            }
+        }
+
+        if (game.gameOver) {
+            System.out.println("Game Over! Do you want to restart? (y/n)");
+            String input = scanner.nextLine();
+            if (input.equals("y")) {
+                game.resetGame();
+                main(args);
+            }
+        }
+        scanner.close();
+    }
+}
+```
+
+This code provides a basic console-based implementation of the Arkanoid game. It includes all the specified classes and methods, and it follows the requirements you provided. The game logic is implemented to handle ball movement, paddle control, brick collision, level progression, and game over conditions. The game can be controlled using the 'a' and 'd' keys for moving the paddle left and right, respectively, and 'q' to quit.
