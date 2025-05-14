@@ -1,0 +1,139 @@
+Develop a Java 8 application for an Arkanoid game where the player controls a paddle to hit a ball and destroy bricks. The game must follow the provided specifications, implementing all 19 requirements described at the end.
+You must implement all the described classes and methods exactly as structured in the skeleton code. The game should be fully functional and adhere to all mechanics and rules.
+You must provide the entire code in one file.
+All attributes and methods must be public. The Ball, Paddle, Brick, and Game classes must not use public/private specifications explicitly, meaning they should be implemented as "class Ball", "class Paddle", etc.
+
+Classes and Methods Skeleton
+
+1. Ball Class
+Attributes:
+x (int): The x-coordinate of the ball.
+y (int): The y-coordinate of the ball.
+diameter (int): The ball’s size (10 pixels).
+xSpeed (int): The speed of the ball horizontally.
+ySpeed (int): The speed of the ball vertically.
+Methods:
+Ball(int x, int y): Initializes the ball at a starting position.
+
+
+Implements: Requirements 4.
+move(): Moves the ball according to its speed..
+
+
+Implements: Requirements 4, 12, 13.
+
+2. Paddle Class
+Attributes:
+x (int): The x-coordinate of the paddle.
+y (int): The y-coordinate of the paddle.
+width (int): The width of the paddle.
+height (int): The height of the paddle.
+Methods:
+Paddle(int x): Initializes the paddle at a position .
+
+
+Implements: Requirements 3, 11.
+moveLeft(): Moves the paddle left within board limits.
+
+
+moveRight(): Moves the paddle right within board limits.
+
+
+
+3. Brick Class
+Attributes:
+x (int): The x-coordinate of the brick.
+y (int): The y-coordinate of the brick.
+width (int): The width of the brick.
+height (int): The height of the brick.
+hitsRequired (int): The number of hits required to destroy the brick.
+color (String): The color of the brick.
+destroyed (boolean): True if the brick is destroyed.
+Methods:
+Brick(int x, int y, String color, int hitsRequired): Initializes the brick.
+
+
+Implements: Requirements 3, 7, 8, 9.
+hit(): Reduces hitsRequired and destroys the brick if it reaches zero.
+
+
+Implements: Requirements 9.
+
+4. Board Class
+Attributes:
+width (int): The width of the board.
+height (int): The height of the board.
+Methods:
+Board(int width, int weight): Initializes the board.
+
+
+Implements: Requirements 2
+
+5. Game Class
+Attributes:
+ball (Ball): The game’s ball.
+paddle (Paddle): The user-controlled paddle.
+board(Board): The game’s board.
+bricks (List of Brick[][]): The board’s bricks.
+level (int): The current level.
+lives (int): The player’s remaining lives.
+gameOver (boolean): True if the game ends.
+maxLevel (int): Maximum level of the game.
+Methods:
+Game(): Constructor initializing the game state.
+
+
+Implements: Requirements 1, 2, 10, 16.
+generateBricks(): Generates the initial brick layout for the current level.
+
+
+Implements: Requirements 10, 14, 15.
+updateGame(): Updates game logic, moves the ball, checks for collisions, and determines if the level is completed.
+
+
+Implements: Requirements 6, 12, 17.
+checkCollisions(): Handles ball collisions with the paddle, walls, and bricks.
+
+
+Implements: Requirements 5, 6, 9, 12.
+loseLife(): Reduces the player’s life count according to requirements and updates gameOver if it is needed.
+
+
+Implements: Requirements 17, 18.
+nextLevel(): Moves to the next level, increases difficulty, and regenerates bricks.
+
+
+Implements: Requirements 13, 14.
+resetGame(): Resets the game when the player chooses to restart after the game is over.
+
+
+Implements: Requirements 19.
+
+5. ArkanoidGame Class
+Methods:
+main(String[] args): The entry point of the program that initializes the game.
+Implements: Requirements 19.
+
+
+
+Requirements:
+
+1.The goal of the game is to complete 33 levels successfully.
+2.The board is 200 pixels wide horizontally and 300 pixels wide vertically.
+3.The bricks and the paddle are rectangular blocks with a width of 20 pixels and height of 10 pixels. The ball has a diameter of 10 pixels.
+4.At the beginning of each level, the ball starts from the top left corner of the board and moves downwards with a straight trajectory at a 45° angle and a speed of 5 pixels per second.
+5.At each level, the user moves a paddle in order to hit a ball, making the ball change its direction upward.
+6.To successfully complete a level, the user needs to break all bricks on the board by hitting them with the ball.
+7.Bricks can have a color (blue, red, gold) and can be sized single or double.
+8.A brick is sized single (20 x 10 pixels) or double (40 x 10 pixels).
+9.Blue bricks are destroyed with one hit, red bricks require two hits, gold bricks require three hits.
+10.The first level gets initialised with 50 blue, single bricks randomly placed on the upper third of the board.
+11.The paddle only moves horizontally on the bottom of the board, controlled by the user by left and right arrow keys. The paddle always stays inside the board. When each level starts the paddle resets to the center of the bottom border.
+12.The ball direction changes every time the ball hits the paddle or the border of the board (except for the bottom border) with the correct angle of reflection.
+13.Every time the next level starts, the speed of the ball increases by a sufficient amount.
+14.When the user finishes a level, the next level with a different brick arrangement and increased difficulty begins. Each level adds two red bricks and one gold brick.
+15.The program shall generate the brick pattern and arrangement randomly.
+16.The user has 3 lives.
+17.The user loses a life every time the ball falls off the bottom of the board.
+18.When the user loses a life but still has lives remaining, the level should restart if possible. Once the user loses all lives, the game is over.
+19.When a game is over, the user shall decide if they want to play again. If they want to play again, the new game starts from level 1. Otherwise, the game ends.

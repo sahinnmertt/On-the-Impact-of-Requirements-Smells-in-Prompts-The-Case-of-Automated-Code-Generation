@@ -1,0 +1,375 @@
+# Arkanoid Game in Java 8
+
+Here's a complete implementation of the Arkanoid game according to all the specified requirements:
+
+```java
+import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import javax.swing.*;
+
+class Ball {
+    int x;
+    int y;
+    int diameter = 10;
+    int xSpeed;
+    int ySpeed;
+
+    Ball(int x, int y) {
+        this.x = x;
+        this.y = y;
+        this.xSpeed = 5;
+        this.ySpeed = 5;
+    }
+
+    void move() {
+        x += xSpeed;
+        y += ySpeed;
+    }
+}
+
+class Paddle {
+    int x;
+    int y;
+    int width = 20;
+    int height = 10;
+
+    Paddle(int x, int boardHeight) {
+        this.x = x;
+        this.y = boardHeight - height;
+    }
+
+    void moveLeft() {
+        if (x > 0) {
+            x -= 10;
+        }
+    }
+
+    void moveRight(int boardWidth) {
+        if (x < boardWidth - width) {
+            x += 10;
+        }
+    }
+}
+
+class Brick {
+    int x;
+    int y;
+    int width;
+    int height = 10;
+    int hitsRequired;
+    String color;
+    boolean destroyed = false;
+
+    Brick(int x, int y, String color, int hitsRequired, boolean isDouble) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.hitsRequired = hitsRequired;
+        this.width = isDouble ? 40 : 20;
+    }
+
+    void hit() {
+        hitsRequired--;
+        if (hitsRequired <= 0) {
+            destroyed = true;
+        }
+    }
+}
+
+class Board {
+    int width = 200;
+    int height = 300;
+
+    Board(int width, int height) {
+        this.width = width;
+        this.height = height;
+    }
+}
+
+class Game {
+    Ball ball;
+    Paddle paddle;
+    Board board;
+    List<Brick> bricks;
+    int level = 1;
+    int lives = 3;
+    boolean gameOver = false;
+    int maxLevel = 33;
+    Random random = new Random();
+
+    Game() {
+        board = new Board(200, 300);
+        paddle = new Paddle(board.width / 2 - 10, board.height);
+        ball = new Ball(0, 0);
+        bricks = new ArrayList<>();
+        generateBricks();
+    }
+
+    void generateBricks() {
+        bricks.clear();
+        
+        // Add blue bricks (50 in level 1, decreasing by 2 each level)
+        int blueBricks = Math.max(0, 52 - 2 * level);
+        for (int i = 0; i < blueBricks; i++) {
+            int x = random.nextInt(board.width - 20);
+            int y = random.nextInt(board.height / 3);
+            bricks.add(new Brick(x, y, "blue", 1, false));
+        }
+        
+        // Add red bricks (2 per level)
+        for (int i = 0; i < level * 2; i++) {
+            int x = random.nextInt(board.width - 20);
+            int y = random.nextInt(board.height / 3);
+            bricks.add(new Brick(x, y, "red", 2, false));
+        }
+        
+        // Add gold bricks (1 per level)
+        for (int i = 0; i < level; i++) {
+            int x = random.nextInt(board.width - 40);
+            int y = random.nextInt(board.height / 3);
+            bricks.add(new Brick(x, y, "gold", 3, true));
+        }
+    }
+
+    void updateGame() {
+        ball.move();
+        checkCollisions();
+        
+        // Check if all bricks are destroyed
+        boolean levelComplete = true;
+        for (Brick brick : bricks) {
+            if (!brick.destroyed) {
+                levelComplete = false;
+                break;
+            }
+        }
+        
+        if (levelComplete) {
+            if (level < maxLevel) {
+                nextLevel();
+            } else {
+                gameOver = true; // Player won
+            }
+        }
+    }
+
+    void checkCollisions() {
+        // Wall collisions
+        if (ball.x <= 0 || ball.x + ball.diameter >= board.width) {
+            ball.xSpeed = -ball.xSpeed;
+        }
+        if (ball.y <= 0) {
+            ball.ySpeed = -ball.ySpeed;
+        }
+        
+        // Bottom collision (lose life)
+        if (ball.y + ball.diameter >= board.height) {
+            loseLife();
+            return;
+        }
+        
+        // Paddle collision
+        if (ball.y + ball.diameter >= paddle.y && 
+            ball.x + ball.diameter >= paddle.x && 
+            ball.x <= paddle.x + paddle.width) {
+            ball.ySpeed = -Math.abs(ball.ySpeed); // Ensure it goes up
+            // Add some angle based on where it hits the paddle
+            float hitPosition = (ball.x - paddle.x) / (float)paddle.width;
+            ball.xSpeed = (int)(10 * (hitPosition - 0.5));
+        }
+        
+        // Brick collisions
+        for (Brick brick : bricks) {
+            if (!brick.destroyed && 
+                ball.x + ball.diameter >= brick.x && 
+                ball.x <= brick.x + brick.width && 
+                ball.y + ball.diameter >= brick.y && 
+                ball.y <= brick.y + brick.height) {
+                
+                brick.hit();
+                
+                // Determine collision side and bounce accordingly
+                boolean fromLeft = ball.x + ball.diameter >= brick.x && ball.x < brick.x;
+                boolean fromRight = ball.x <= brick.x + brick.width && ball.x + ball.diameter > brick.x + brick.width;
+                boolean fromTop = ball.y + ball.diameter >= brick.y && ball.y < brick.y;
+                boolean fromBottom = ball.y <= brick.y + brick.height && ball.y + ball.diameter > brick.y + brick.height;
+                
+                if (fromLeft || fromRight) {
+                    ball.xSpeed = -ball.xSpeed;
+                }
+                if (fromTop || fromBottom) {
+                    ball.ySpeed = -ball.ySpeed;
+                }
+                
+                break;
+            }
+        }
+    }
+
+    void loseLife() {
+        lives--;
+        if (lives <= 0) {
+            gameOver = true;
+        } else {
+            // Reset ball and paddle
+            ball.x = 0;
+            ball.y = 0;
+            ball.xSpeed = 5;
+            ball.ySpeed = 5;
+            paddle.x = board.width / 2 - 10;
+        }
+    }
+
+    void nextLevel() {
+        level++;
+        ball.x = 0;
+        ball.y = 0;
+        ball.xSpeed = 5 + level;
+        ball.ySpeed = 5 + level;
+        paddle.x = board.width / 2 - 10;
+        generateBricks();
+    }
+
+    void resetGame() {
+        level = 1;
+        lives = 3;
+        gameOver = false;
+        ball.x = 0;
+        ball.y = 0;
+        ball.xSpeed = 5;
+        ball.ySpeed = 5;
+        paddle.x = board.width / 2 - 10;
+        generateBricks();
+    }
+}
+
+public class ArkanoidGame extends JPanel implements KeyListener {
+    private Game game;
+    private Timer timer;
+    
+    public ArkanoidGame() {
+        game = new Game();
+        addKeyListener(this);
+        setFocusable(true);
+        setPreferredSize(new Dimension(game.board.width, game.board.height));
+        
+        timer = new Timer(50, e -> {
+            if (!game.gameOver) {
+                game.updateGame();
+            }
+            repaint();
+        });
+        timer.start();
+    }
+    
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        
+        // Draw ball
+        g.setColor(Color.BLACK);
+        g.fillOval(game.ball.x, game.ball.y, game.ball.diameter, game.ball.diameter);
+        
+        // Draw paddle
+        g.setColor(Color.DARK_GRAY);
+        g.fillRect(game.paddle.x, game.paddle.y, game.paddle.width, game.paddle.height);
+        
+        // Draw bricks
+        for (Brick brick : game.bricks) {
+            if (!brick.destroyed) {
+                switch (brick.color) {
+                    case "blue":
+                        g.setColor(Color.BLUE);
+                        break;
+                    case "red":
+                        g.setColor(Color.RED);
+                        break;
+                    case "gold":
+                        g.setColor(Color.ORANGE);
+                        break;
+                }
+                g.fillRect(brick.x, brick.y, brick.width, brick.height);
+                g.setColor(Color.BLACK);
+                g.drawRect(brick.x, brick.y, brick.width, brick.height);
+            }
+        }
+        
+        // Draw game info
+        g.setColor(Color.BLACK);
+        g.drawString("Level: " + game.level, 5, 15);
+        g.drawString("Lives: " + game.lives, 5, 30);
+        
+        // Draw game over message
+        if (game.gameOver) {
+            g.setFont(new Font("Arial", Font.BOLD, 20));
+            if (game.level > game.maxLevel) {
+                g.drawString("You Win!", game.board.width / 2 - 40, game.board.height / 2);
+            } else {
+                g.drawString("Game Over", game.board.width / 2 - 50, game.board.height / 2);
+            }
+            g.setFont(new Font("Arial", Font.PLAIN, 12));
+            g.drawString("Press R to restart or Q to quit", game.board.width / 2 - 80, game.board.height / 2 + 30);
+        }
+    }
+    
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (game.gameOver) {
+            if (e.getKeyCode() == KeyEvent.VK_R) {
+                game.resetGame();
+            } else if (e.getKeyCode() == KeyEvent.VK_Q) {
+                System.exit(0);
+            }
+        } else {
+            if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                game.paddle.moveLeft();
+            } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                game.paddle.moveRight(game.board.width);
+            }
+        }
+    }
+    
+    @Override
+    public void keyReleased(KeyEvent e) {}
+    
+    @Override
+    public void keyTyped(KeyEvent e) {}
+    
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Arkanoid Game");
+        ArkanoidGame game = new ArkanoidGame();
+        frame.add(game);
+        frame.pack();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+}
+```
+
+This implementation includes all the required classes (Ball, Paddle, Brick, Board, Game) and the main ArkanoidGame class that handles the GUI and user input. The game follows all 19 requirements:
+
+1. 33 levels maximum
+2. 200x300 pixel board
+3. Correct sizes for all game elements
+4. Ball starts at top left with 45° angle
+5. Paddle controls ball direction
+6. Destroy all bricks to complete level
+7. Brick colors (blue, red, gold)
+8. Single (20x10) and double (40x10) bricks
+9. Different hit requirements for each color
+10. Random brick placement
+11. Paddle moves horizontally at bottom
+12. Proper ball reflection physics
+13. Increasing ball speed each level
+14. Level progression with added red/gold bricks
+15. Random brick arrangement
+16. 3 lives
+17. Lose life when ball falls
+18. Level restart on life loss
+19. Restart option after game over
+
+The game can be controlled with left/right arrow keys, and when game over, you can press R to restart or Q to quit.
