@@ -1,0 +1,353 @@
+I'll implement the Scopa card game according to the specifications provided. Here's the complete Java 8 implementation in a single file:
+
+```java
+import java.util.*;
+import java.util.stream.Collectors;
+
+class Card {
+    String suit;
+    int value;
+
+    Card(String suit, int value) {
+        this.suit = suit;
+        this.value = value;
+    }
+
+    int getValue() {
+        return value;
+    }
+
+    String getSuit() {
+        return suit;
+    }
+
+    @Override
+    public String toString() {
+        return value + " of " + suit;
+    }
+}
+
+class Player {
+    String name;
+    int score;
+    int specialPoints;
+    List<Card> hand;
+    List<Card> discardPile;
+
+    Player(String name) {
+        this.name = name;
+        this.score = 0;
+        this.specialPoints = 0;
+        this.hand = new ArrayList<>();
+        this.discardPile = new ArrayList<>();
+    }
+
+    Card playCard(int cardIndex) {
+        return hand.remove(cardIndex);
+    }
+
+    void addToDiscardPile(List<Card> capturedCards) {
+        discardPile.addAll(capturedCards);
+    }
+
+    void clearTableCapture() {
+        specialPoints++;
+    }
+
+    int getTotalCards() {
+        return discardPile.size();
+    }
+
+    int getCoinsCount() {
+        return (int) discardPile.stream().filter(card -> card.getSuit().equals("Coins")).count();
+    }
+
+    boolean hasSevenOfCoins() {
+        return discardPile.stream().anyMatch(card -> card.getSuit().equals("Coins") && card.getValue() == 7);
+    }
+
+    int getSumOfCards() {
+        return discardPile.stream().mapToInt(Card::getValue).sum();
+    }
+
+    @Override
+    public String toString() {
+        return name + " (Score: " + score + ", Special: " + specialPoints + ")";
+    }
+}
+
+class Game {
+    List<Player> players;
+    List<Card> deck;
+    List<Card> tableCards;
+    List<Integer> turnOrder;
+    boolean roundOver;
+    boolean gameOver;
+    int roundCount;
+    static final int WINNING_SCORE = 11;
+
+    Game() {
+        players = new ArrayList<>();
+        deck = new ArrayList<>();
+        tableCards = new ArrayList<>();
+        turnOrder = new ArrayList<>();
+        roundOver = false;
+        gameOver = false;
+        roundCount = 0;
+    }
+
+    void initializeGame() {
+        // Create players
+        players.add(new Player("Alice"));
+        players.add(new Player("Bob"));
+        players.add(new Player("Charlie"));
+
+        // Initialize deck
+        String[] suits = {"Coins", "Cups", "Swords", "Clubs"};
+        for (String suit : suits) {
+            for (int value = 1; value <= 10; value++) {
+                deck.add(new Card(suit, value));
+            }
+        }
+
+        // Shuffle deck
+        Collections.shuffle(deck);
+
+        // Determine random turn order
+        turnOrder = new ArrayList<>(Arrays.asList(0, 1, 2));
+        Collections.shuffle(turnOrder);
+
+        // Deal initial cards (3 to each player)
+        for (Player player : players) {
+            for (int i = 0; i < 3; i++) {
+                if (!deck.isEmpty()) {
+                    player.hand.add(deck.remove(0));
+                }
+            }
+        }
+
+        // Place 4 cards on the table
+        for (int i = 0; i < 4; i++) {
+            if (!deck.isEmpty()) {
+                tableCards.add(deck.remove(0));
+            }
+        }
+
+        roundCount++;
+    }
+
+    void playTurn(Player player) {
+        if (player.hand.isEmpty()) {
+            if (!deck.isEmpty()) {
+                // Draw 3 new cards
+                for (int i = 0; i < 3; i++) {
+                    if (!deck.isEmpty()) {
+                        player.hand.add(deck.remove(0));
+                    }
+                }
+            } else {
+                return;
+            }
+        }
+
+        // For simplicity, AI chooses first card in hand
+        int cardIndex = 0;
+        Card playedCard = player.playCard(cardIndex);
+
+        // Find matching cards
+        List<List<Card>> possibleCaptures = new ArrayList<>();
+        
+        // Check for single card matches
+        for (Card tableCard : tableCards) {
+            if (tableCard.getValue() == playedCard.getValue()) {
+                possibleCaptures.add(Collections.singletonList(tableCard));
+            }
+        }
+
+        // Check for sum matches (two cards)
+        for (int i = 0; i < tableCards.size(); i++) {
+            for (int j = i + 1; j < tableCards.size(); j++) {
+                if (tableCards.get(i).getValue() + tableCards.get(j).getValue() == playedCard.getValue()) {
+                    possibleCaptures.add(Arrays.asList(tableCards.get(i), tableCards.get(j)));
+                }
+            }
+        }
+
+        // Check for sum matches (three cards)
+        for (int i = 0; i < tableCards.size(); i++) {
+            for (int j = i + 1; j < tableCards.size(); j++) {
+                for (int k = j + 1; k < tableCards.size(); k++) {
+                    if (tableCards.get(i).getValue() + tableCards.get(j).getValue() + tableCards.get(k).getValue() == playedCard.getValue()) {
+                        possibleCaptures.add(Arrays.asList(tableCards.get(i), tableCards.get(j), tableCards.get(k)));
+                    }
+                }
+            }
+        }
+
+        if (!possibleCaptures.isEmpty()) {
+            // For simplicity, choose the first possible capture
+            List<Card> capturedCards = possibleCaptures.get(0);
+            player.addToDiscardPile(capturedCards);
+            player.addToDiscardPile(Collections.singletonList(playedCard));
+            tableCards.removeAll(capturedCards);
+
+            // Check if table was cleared
+            if (tableCards.isEmpty()) {
+                player.clearTableCapture();
+            }
+        } else {
+            // No matches, add card to table
+            tableCards.add(playedCard);
+        }
+
+        // Check if round is over (no cards left in deck and all players have empty hands)
+        if (deck.isEmpty() && players.stream().allMatch(p -> p.hand.isEmpty())) {
+            roundOver = true;
+            // Last player to capture cards gets remaining table cards
+            if (!tableCards.isEmpty()) {
+                player.addToDiscardPile(new ArrayList<>(tableCards));
+                tableCards.clear();
+            }
+        }
+    }
+
+    void handleRoundEnd() {
+        // Calculate scores for this round
+        calculateFinalScores();
+
+        // Check if game is over
+        if (players.stream().anyMatch(p -> p.score >= WINNING_SCORE)) {
+            gameOver = true;
+            return;
+        }
+
+        // Prepare for next round
+        roundOver = false;
+        deck.clear();
+        tableCards.clear();
+
+        // Rebuild and shuffle deck
+        String[] suits = {"Coins", "Cups", "Swords", "Clubs"};
+        for (String suit : suits) {
+            for (int value = 1; value <= 10; value++) {
+                deck.add(new Card(suit, value));
+            }
+        }
+        Collections.shuffle(deck);
+
+        // Clear player hands but keep discard piles
+        for (Player player : players) {
+            player.hand.clear();
+        }
+
+        // Deal initial cards again
+        for (Player player : players) {
+            for (int i = 0; i < 3; i++) {
+                if (!deck.isEmpty()) {
+                    player.hand.add(deck.remove(0));
+                }
+            }
+        }
+
+        // Place 4 cards on the table
+        for (int i = 0; i < 4; i++) {
+            if (!deck.isEmpty()) {
+                tableCards.add(deck.remove(0));
+            }
+        }
+
+        // Rotate turn order for next round
+        Collections.rotate(turnOrder, 1);
+        roundCount++;
+    }
+
+    void calculateFinalScores() {
+        // Reset scores for the round (keep special points)
+        for (Player player : players) {
+            player.score = player.specialPoints;
+        }
+
+        // Calculate additional points based on discard piles
+        // 1. Most cards
+        int maxCards = players.stream().mapToInt(Player::getTotalCards).max().orElse(0);
+        players.stream()
+               .filter(p -> p.getTotalCards() == maxCards)
+               .forEach(p -> p.score++);
+
+        // 2. Most coins
+        int maxCoins = players.stream().mapToInt(Player::getCoinsCount).max().orElse(0);
+        if (maxCoins > 0) {
+            players.stream()
+                   .filter(p -> p.getCoinsCount() == maxCoins)
+                   .forEach(p -> p.score++);
+        }
+
+        // 3. Seven of coins
+        players.stream()
+               .filter(Player::hasSevenOfCoins)
+               .forEach(p -> p.score++);
+
+        // 4. Highest sum of cards
+        int maxSum = players.stream().mapToInt(Player::getSumOfCards).max().orElse(0);
+        players.stream()
+               .filter(p -> p.getSumOfCards() == maxSum)
+               .forEach(p -> p.score++);
+    }
+
+    void declareWinner() {
+        Player winner = players.stream()
+                .max(Comparator.comparingInt(p -> p.score))
+                .orElse(null);
+
+        if (winner != null) {
+            System.out.println("Game over! The winner is " + winner.name + " with " + winner.score + " points!");
+        } else {
+            System.out.println("Game ended in a draw.");
+        }
+
+        System.out.println("Final scores:");
+        for (Player player : players) {
+            System.out.println(player.name + ": " + player.score + " points");
+        }
+    }
+}
+
+public class ScopaGame {
+    public static void main(String[] args) {
+        Game game = new Game();
+        game.initializeGame();
+
+        while (!game.gameOver) {
+            for (int playerIndex : game.turnOrder) {
+                Player currentPlayer = game.players.get(playerIndex);
+                game.playTurn(currentPlayer);
+
+                if (game.roundOver) {
+                    game.handleRoundEnd();
+                    if (game.gameOver) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        game.declareWinner();
+    }
+}
+```
+
+This implementation includes:
+
+1. All required classes (Player, Card, Game, ScopaGame)
+2. All specified attributes and methods
+3. The complete game logic following Scopa rules
+4. Three players (Alice, Bob, Charlie) with random turn order
+5. Special points for clearing the table
+6. Card capturing logic (single card and sum matches)
+7. Round and game management
+8. Scoring system with all four scoring criteria
+9. Game ends when a player reaches 11 points
+
+The game can be run by executing the ScopaGame class. Players take turns automatically (as this is a simulation), and the game continues until one player reaches the winning score of 11 points.
+
+Note that in a real game, you'd want to add user input for player choices, but this implementation focuses on the core game mechanics as specified in the requirements.

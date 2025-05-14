@@ -1,0 +1,190 @@
+Below is the complete Java code for the dice game as per the specifications and requirements provided:
+
+```java
+import java.util.*;
+
+class Player {
+    String name;
+    int points;
+    String pointColor;
+    int[] consecutiveRolls;
+
+    Player(String name) {
+        this.name = name;
+        this.points = 0;
+        this.pointColor = "red"; // Default color for player 1
+        this.consecutiveRolls = new int[3];
+    }
+
+    void updatePoints(int diceValue) {
+        if (diceValue == 2) {
+            diceValue *= 3;
+        } else if (diceValue % 2 == 0) {
+            diceValue /= 2;
+        }
+        points += diceValue;
+        updateColor();
+    }
+
+    void updateColor() {
+        if (points > 11) {
+            pointColor = "purple";
+        } else if (points > 5) {
+            pointColor = "yellow";
+        } else {
+            pointColor = "red"; // Default color for player 1
+        }
+    }
+
+    void resetPoints() {
+        points = 0;
+    }
+}
+
+class Game {
+    List<Player> players;
+    List<Integer> turnOrder;
+    int turnCount;
+    boolean gameOver;
+
+    Game() {
+        players = new ArrayList<>();
+        turnOrder = new ArrayList<>();
+        turnCount = 0;
+        gameOver = false;
+    }
+
+    void initializeGame() {
+        Scanner scanner = new Scanner(System.in);
+        for (int i = 0; i < 3; i++) {
+            String name;
+            do {
+                System.out.println("Enter name for player " + (i + 1) + ": ");
+                name = scanner.nextLine();
+                if (name.equalsIgnoreCase("Computer")) {
+                    System.out.println("Name cannot be Computer");
+                }
+            } while (name.equalsIgnoreCase("Computer"));
+            players.add(new Player(name));
+        }
+        Collections.shuffle(turnOrder);
+        for (int i = 0; i < 3; i++) {
+            turnOrder.add(i);
+        }
+    }
+
+    void manageTurn() {
+        Scanner scanner = new Scanner(System.in);
+        int currentPlayerIndex = turnOrder.get(turnCount % 3);
+        Player currentPlayer = players.get(currentPlayerIndex);
+
+        System.out.println(currentPlayer.name + "'s turn. Current points: " + currentPlayer.points);
+        System.out.println("Would you like to skip?");
+        String skipResponse = scanner.nextLine();
+        if (skipResponse.equalsIgnoreCase("yes")) {
+            turnCount++;
+            return;
+        }
+
+        int diceValue = rollDice();
+        System.out.println("Dice rolled: " + diceValue);
+
+        if (diceValue == 1) {
+            System.out.println("Would you like to re-roll?");
+            String rerollResponse = scanner.nextLine();
+            if (rerollResponse.equalsIgnoreCase("yes")) {
+                diceValue = rollDice();
+                System.out.println("Re-rolled dice: " + diceValue);
+            }
+        }
+
+        if (diceValue == 5) {
+            int secondRoll = rollDice();
+            System.out.println("Rolled a 5, rolling again: " + secondRoll);
+            diceValue *= secondRoll;
+        }
+
+        currentPlayer.updatePoints(diceValue);
+        System.out.println(currentPlayer.name + " now has " + currentPlayer.points + " points.");
+
+        if (diceValue == 6) {
+            System.out.println("Rolled a 6, next player's turn is skipped.");
+            turnCount++;
+        }
+
+        if (checkGameEndConditions()) {
+            gameOver = true;
+            declareWinner();
+        }
+
+        turnCount++;
+    }
+
+    int rollDice() {
+        return new Random().nextInt(6) + 1;
+    }
+
+    boolean checkGameEndConditions() {
+        if (turnCount >= 12) {
+            return true;
+        }
+
+        for (Player player : players) {
+            boolean hasMoreThanTenPoints = true;
+            for (Player otherPlayer : players) {
+                if (player != otherPlayer && player.points <= otherPlayer.points + 10) {
+                    hasMoreThanTenPoints = false;
+                    break;
+                }
+            }
+            if (hasMoreThanTenPoints) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void declareWinner() {
+        Player winner = players.get(0);
+        for (Player player : players) {
+            if (player.points > winner.points) {
+                winner = player;
+            }
+        }
+        System.out.println("Congratulations " + winner.name + "! You are the winner with " + winner.points + " points.");
+        displayEquality();
+    }
+
+    void displayEquality() {
+        Set<Integer> uniquePoints = new HashSet<>();
+        for (Player player : players) {
+            uniquePoints.add(player.points);
+        }
+        if (uniquePoints.size() < players.size()) {
+            System.out.println("Equality!");
+        }
+    }
+
+    void prepareForNextGame() {
+        players.sort(Comparator.comparingInt(p -> p.points));
+        turnOrder.clear();
+        for (int i = 0; i < players.size(); i++) {
+            turnOrder.add(i);
+        }
+    }
+}
+
+public class DiceGame {
+    public static void main(String[] args) {
+        Game game = new Game();
+        game.initializeGame();
+        while (!game.gameOver) {
+            game.manageTurn();
+        }
+        game.prepareForNextGame();
+    }
+}
+```
+
+This code implements the dice game with all the specified requirements. The game initializes with three players, manages turns, handles special conditions, and determines the winner. The game can be extended to allow for multiple rounds by calling `game.prepareForNextGame()` and resetting the game state as needed.

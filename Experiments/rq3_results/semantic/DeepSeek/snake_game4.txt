@@ -1,0 +1,379 @@
+Here's the complete Java 8 implementation of the Snake game according to your specifications:
+
+```java
+import java.util.*;
+import java.awt.*;
+import javax.swing.*;
+import java.awt.event.*;
+
+class Coordinates {
+    int x;
+    int y;
+    
+    Coordinates(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Coordinates that = (Coordinates) obj;
+        return x == that.x && y == that.y;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y);
+    }
+}
+
+class Snake {
+    List<Coordinates> body;
+    String direction;
+    double speed;
+    int growing;
+    String color;
+    
+    Snake() {
+        body = new ArrayList<>();
+        body.add(new Coordinates(0, 0));
+        direction = "UP";
+        speed = 0.5;
+        growing = 0;
+        color = "GREEN";
+    }
+    
+    void move() {
+        Coordinates head = body.get(0);
+        Coordinates newHead;
+        
+        switch (direction) {
+            case "UP":
+                newHead = new Coordinates(head.x, head.y - 1);
+                break;
+            case "DOWN":
+                newHead = new Coordinates(head.x, head.y + 1);
+                break;
+            case "LEFT":
+                newHead = new Coordinates(head.x - 1, head.y);
+                break;
+            case "RIGHT":
+                newHead = new Coordinates(head.x + 1, head.y);
+                break;
+            default:
+                newHead = new Coordinates(head.x, head.y - 1);
+        }
+        
+        body.add(0, newHead);
+        
+        if (growing > 0) {
+            growing--;
+        } else {
+            body.remove(body.size() - 1);
+        }
+    }
+    
+    void grow(int amount) {
+        growing += amount;
+    }
+    
+    void increaseSpeed() {
+        speed *= 1.01;
+    }
+    
+    void decreaseSpeed() {
+        speed *= 0.95;
+    }
+}
+
+class Food {
+    Coordinates position;
+    String color;
+    
+    Food(String color) {
+        this.color = color;
+        generateNewPosition(20); // Default size, will be updated
+    }
+    
+    void generateNewPosition(int boardSize) {
+        Random random = new Random();
+        position = new Coordinates(random.nextInt(boardSize), random.nextInt(boardSize));
+    }
+}
+
+class Board extends JPanel {
+    int size;
+    int blockSize;
+    Snake snake;
+    Food food;
+    Food bonusFood;
+    
+    Board(int k) {
+        size = k;
+        blockSize = 5;
+        setPreferredSize(new Dimension(size * blockSize, size * blockSize));
+        setBackground(Color.BLACK);
+    }
+    
+    void render(Snake snake, Food food, Food bonusFood) {
+        this.snake = snake;
+        this.food = food;
+        this.bonusFood = bonusFood;
+        repaint();
+    }
+    
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        
+        // Draw snake
+        g.setColor(Color.GREEN);
+        for (Coordinates coord : snake.body) {
+            g.fillRect(coord.x * blockSize, coord.y * blockSize, blockSize, blockSize);
+        }
+        
+        // Draw food
+        g.setColor(Color.RED);
+        g.fillRect(food.position.x * blockSize, food.position.y * blockSize, blockSize, blockSize);
+        
+        // Draw bonus food if exists
+        if (bonusFood != null) {
+            if (bonusFood.color.equals("BLUE")) {
+                g.setColor(Color.BLUE);
+            } else if (bonusFood.color.equals("YELLOW")) {
+                g.setColor(Color.YELLOW);
+            }
+            g.fillRect(bonusFood.position.x * blockSize, bonusFood.position.y * blockSize, blockSize, blockSize);
+        }
+    }
+}
+
+class Game {
+    Snake snake;
+    Food food;
+    Food bonusFood;
+    boolean paused;
+    String difficulty;
+    int time;
+    boolean gameOver;
+    Board board;
+    int foodEaten;
+    Timer timer;
+    long lastBonusTime;
+    
+    Game(int boardSize, String difficulty) {
+        this.difficulty = difficulty;
+        snake = new Snake();
+        if (difficulty.equals("easy")) {
+            snake.speed = 0.5;
+        } else {
+            snake.speed = 1.0;
+        }
+        food = new Food("RED");
+        bonusFood = null;
+        paused = false;
+        time = 0;
+        gameOver = false;
+        board = new Board(boardSize);
+        foodEaten = 0;
+        lastBonusTime = System.currentTimeMillis();
+        
+        // Set initial position for snake (bottom left)
+        snake.body.clear();
+        snake.body.add(new Coordinates(0, boardSize - 1));
+        
+        // Generate food at random position
+        food.generateNewPosition(boardSize);
+        
+        // Start game timer
+        startGameLoop();
+    }
+    
+    void startGameLoop() {
+        timer = new Timer((int)(1000 / snake.speed), e -> {
+            if (!paused && !gameOver) {
+                updateGame();
+            }
+        });
+        timer.start();
+    }
+    
+    void updateGame() {
+        snake.move();
+        checkCollisions();
+        board.render(snake, food, bonusFood);
+        
+        // Check for bonus food spawn
+        if (foodEaten >= 10 && bonusFood == null) {
+            spawnBonusFood("BLUE");
+        }
+        
+        // Check for golden bonus every 5 minutes
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastBonusTime >= 5 * 60 * 1000 && bonusFood == null) {
+            spawnBonusFood("YELLOW");
+            lastBonusTime = currentTime;
+        }
+    }
+    
+    void checkCollisions() {
+        Coordinates head = snake.body.get(0);
+        
+        // Check wall collision
+        if (head.x < 0 || head.x >= board.size || head.y < 0 || head.y >= board.size) {
+            gameOver = true;
+            return;
+        }
+        
+        // Check self collision
+        for (int i = 1; i < snake.body.size(); i++) {
+            if (head.equals(snake.body.get(i))) {
+                gameOver = true;
+                return;
+            }
+        }
+        
+        // Check food collision
+        if (head.equals(food.position)) {
+            snake.grow(1);
+            snake.increaseSpeed();
+            food.generateNewPosition(board.size);
+            foodEaten++;
+            
+            // Adjust timer delay based on new speed
+            timer.setDelay((int)(1000 / snake.speed));
+        }
+        
+        // Check bonus food collision
+        if (bonusFood != null && head.equals(bonusFood.position)) {
+            if (bonusFood.color.equals("BLUE")) {
+                snake.grow(3);
+            } else if (bonusFood.color.equals("YELLOW")) {
+                snake.decreaseSpeed();
+                timer.setDelay((int)(1000 / snake.speed));
+            }
+            bonusFood = null;
+        }
+    }
+    
+    void handleKeyPress(char key) {
+        switch (Character.toUpperCase(key)) {
+            case 'P':
+                paused = !paused;
+                break;
+            case 'W':
+            case 'I':
+                if (!snake.direction.equals("DOWN")) snake.direction = "UP";
+                break;
+            case 'S':
+            case 'K':
+                if (!snake.direction.equals("UP")) snake.direction = "DOWN";
+                break;
+            case 'A':
+            case 'J':
+                if (!snake.direction.equals("RIGHT")) snake.direction = "LEFT";
+                break;
+            case 'D':
+            case 'L':
+                if (!snake.direction.equals("LEFT")) snake.direction = "RIGHT";
+                break;
+        }
+    }
+    
+    void spawnBonusFood(String foodColor) {
+        bonusFood = new Food(foodColor);
+        bonusFood.generateNewPosition(board.size);
+    }
+    
+    void resetGame() {
+        timer.stop();
+        snake = new Snake();
+        if (difficulty.equals("easy")) {
+            snake.speed = 0.5;
+        } else {
+            snake.speed = 1.0;
+        }
+        food = new Food("RED");
+        bonusFood = null;
+        paused = false;
+        gameOver = false;
+        foodEaten = 0;
+        lastBonusTime = System.currentTimeMillis();
+        
+        // Set initial position for snake (bottom left)
+        snake.body.clear();
+        snake.body.add(new Coordinates(0, board.size - 1));
+        
+        // Generate food at random position
+        food.generateNewPosition(board.size);
+        
+        startGameLoop();
+    }
+}
+
+public class SnakeGame {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        
+        System.out.print("Enter board size (k x k blocks): ");
+        int boardSize = scanner.nextInt();
+        scanner.nextLine(); // consume newline
+        
+        System.out.print("Enter difficulty (easy/hard): ");
+        String difficulty = scanner.nextLine().toLowerCase();
+        
+        while (!difficulty.equals("easy") && !difficulty.equals("hard")) {
+            System.out.print("Invalid input. Enter difficulty (easy/hard): ");
+            difficulty = scanner.nextLine().toLowerCase();
+        }
+        
+        JFrame frame = new JFrame("Snake Game");
+        Game game = new Game(boardSize, difficulty);
+        frame.add(game.board);
+        frame.pack();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+        
+        frame.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                game.handleKeyPress(e.getKeyChar());
+                
+                if (game.gameOver) {
+                    int option = JOptionPane.showConfirmDialog(frame, 
+                            "Game Over! Do you want to play again?", 
+                            "Game Over", 
+                            JOptionPane.YES_NO_OPTION);
+                    
+                    if (option == JOptionPane.YES_OPTION) {
+                        game.resetGame();
+                    } else {
+                        System.exit(0);
+                    }
+                }
+            }
+        });
+    }
+}
+```
+
+This implementation includes all the required classes and methods, and fulfills all 14 requirements:
+
+1. Snake grows by eating food
+2. Snake eats food when passing over it
+3. Snake grows by one block when eating normal food
+4. Game ends when snake hits wall
+5. Game ends when snake hits itself
+6. Board size is configurable with 5x5 pixel blocks
+7. Initial snake position and direction, initial food
+8. Keyboard controls for direction
+9. New food appears after eating
+10. Speed increases by 1% after eating
+11. Difficulty levels (easy/hard) with different speeds
+12. Blue bonus food after 10 normal foods (grows by 3)
+13. Golden bonus food every 5 minutes (decreases speed by 5%)
+14. Pause functionality with 'P' key
+
+The game uses Swing for rendering and includes a simple console interface for setting up the game parameters. The game loop runs on a timer that adjusts based on the snake's current speed.
