@@ -1,0 +1,126 @@
+Develop a Java 8 application for a Snake game, where the player controls a snake that moves around a board, eating food and growing in size. The game must follow the provided specifications and implement all 14 requirements described at the end.
+You must implement all the described classes and methods exactly as structured in the skeleton code. The game should be fully functional and adhere to all mechanics and rules.
+You must provide the entire code in one file.
+All attributes and methods must be public. The Snake, Food, Game, and Board classes must not use public/private specifications explicitly, meaning they should be implemented as "class Snake", "class Food", etc.
+
+Classes and Methods Skeleton
+
+1. Snake Class
+Attributes:
+body (List of Coordinates): Represents the snake's body as a list of positions.
+direction (String): The direction in which the snake is currently moving ("UP", "DOWN", "LEFT", "RIGHT").
+speed (double): The speed of the snake in blocks per second.
+growing (int): The number of extra blocks to add after eating special or normal food.
+color (String): The color of the snake.
+Methods:
+Snake(): Initializes the snake and food according to the following requirement.
+
+
+Implements: Requirement 7.
+move(): Moves the snake one block in its current direction, growing if needed.
+
+
+Implements: Requirements  3, 8.
+grow(int amount): Increases the snake’s length by amount blocks.
+
+
+Implements: Requirements 3, 12.
+increaseSpeed(): Increases speed by 1% after eating food.
+
+
+Implements: Requirement 10.
+decreaseSpeed(): Decreases speed by 5% after eating a golden bonus.
+
+
+Implements: Requirement 13.
+
+2. Food Class
+Attributes:
+position (Coordinates): The location of the food.
+color (String): The color of the food.
+Methods:
+Food(String color): Generates food at a random position.
+
+
+Implements: Requirements 7, 9, 12, 13.
+generateNewPosition(int boardSize): Assigns a new random position for the food.
+
+
+Implements: Requirement 9.
+
+3. Board Class
+Attributes:
+size (int): The board size (k x k) as pixel, set by the user.
+blockSize (int): The size of each block..
+Methods:
+Board(int k): Initializes the game board and blockSize.
+
+
+Implements: Requirement 6.
+render(): Draws the snake, food, and other elements.
+
+
+Implements: Requirements 7, 8.
+
+4. Coordinates Class
+Attributes:
+x(int): The position in x-axis.
+y(int): The position in y-axis.
+Methods:
+Coordinates(int x, int y): Initializes the coordinates.
+
+5. Game Class
+Attributes:
+snake (Snake): The snake instance.
+food (Food): The current food item.
+bonusFood (Food): The bonus food item (if applicable).
+paused (boolean): Indicates whether the game is paused.
+difficulty (String): The difficulty of the game.
+time (int): The current time of the game in seconds.
+gameOver (boolean): True if the game ends
+Methods:
+Game(int boardSize, String difficulty): Initializes the game with a board, snake, and first food item.
+
+
+Implements: Requirements 6, 7, 11.
+updateGame(): Moves the snake, checks for collisions, and updates the board.
+
+
+Implements: Requirements 1, 2, 3, 4, 5,8, 9, 12, 13.
+checkCollisions(): Handles ball collisions with the paddle, walls, and bricks.
+
+
+Implements: Requirements 4, 5
+handleKeyPress(char key): Changes the snake’s direction or other game conditions related to the key press.
+
+
+Implements: Requirements 8, 14.
+spawnBonusFood(String foodColor): Creates a bonus food item at the correct intervals.
+
+
+Implements: Requirements 12, 13.
+resetGame(): Resets the game after a loss.
+
+
+Implements: Requirements 4, 5.
+
+5. SnakeGame Class
+Methods:
+main(String[] args): Starts the game, asks the user for the board size and difficulty level.
+Implements: Requirements 6, 11.
+
+Requirements:
+1.The goal of the game is to grow the length of the snake by making the snake eat food until it fills the entire board.
+2.The snake eats food when it touches the food (namely every time the snake passes over food on the board).
+3.Every time the snake eats a piece of food, its body grows by one block which gets attached to the end of the body.
+4.If the snake touches a board side the game is over.
+5.If the snake touches its own body the game is over.
+6.The game board consists of k x k blocks, where k shall be given as input by the user. Every block, including the food and body blocks of the snake, shall have a size of 5 x 5 pixels.
+7.When the game starts, the board is initialised with a snake and a piece of food. The snake is represented as a single green block, positioned at the bottom left square of the board. The initial direction shall be up. The piece of food is represented as a single red block placed at a random position on the board.
+8.When the user presses up, down, right, or left on the keyboard, the snake continues to move to the corresponding direction.
+9.Every time the snake eats a piece of food, a new piece of food shall be placed at a random position on the board.
+10.Every time the snake eats a piece of food, its speed increases by 1%.
+11.The user can set the difficulty to easy or hard. If the user selects “easy”, the snake initially moves with a speed of 0.5 blocks per second. If the user selects “hard”, the snake initially moves with a speed of 2 blocks per second.
+12.After the snake has eaten 10 pieces of food, a blue bonus piece of food should appear. When the snake eats that piece, three blocks shall be attached to the snake's body.
+13.Every 5 minutes, a golden bonus block shall appear additionally to the food block. If the snake eats the bonus block, the speed shall decrease by 5%.
+14.If the user presses p on the keyboard, the game shall pause until the user presses p again.
