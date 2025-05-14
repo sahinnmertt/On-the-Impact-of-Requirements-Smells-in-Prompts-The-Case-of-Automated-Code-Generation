@@ -1,0 +1,50 @@
+-------------------------------------------------------------------------------
+Test set: org.example.ArkanoidGameTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.048 sec <<< FAILURE!
+initializationError(org.example.ArkanoidGameTest)  Time elapsed: 0.005 sec  <<< ERROR!
+org.junit.runners.model.InvalidTestClassError: Invalid test class 'org.example.ArkanoidGameTest':
+  1. The class org.example.ArkanoidGameTest is not public.
+  2. Test class should have exactly one public constructor
+  3. Method testBallInitialPositionAndSpeed() should be public
+  4. Method testBallBouncesCorrectly() should be public
+  5. Method testBricksRequireCorrectHitsToBreak() should be public
+  6. Method testBricksAndPaddleSize() should be public
+  7. Method testBoardSize() should be public
+  8. Method testInitialBrickPlacement() should be public
+  9. Method testBrickPatternGeneratedRandomly() should be public
+  10. Method testLifeLostWhenBallFalls() should be public
+  11. Method testPaddleResetsPositionAtStart() should be public
+  12. Method testPaddleMovementWithinBounds() should be public
+  13. Method testLevelRestartsWhenLifeIsLost() should be public
+  14. Method testGameHas33Levels() should be public
+  15. Method testBrickSizes() should be public
+  16. Method testBrickColors() should be public
+  17. Method testGameResetsWhenPlayerChoosesToRestart() should be public
+  18. Method testBricksIncreaseEachLevel() should be public
+  19. Method testPlayerStartsWithThreeLives() should be public
+  20. Method testBreakAllBricksToCompleteLevel() should be public
+  21. Method testBallSpeedIncreasesEachLevel() should be public
+	at org.junit.runners.ParentRunner.validate(ParentRunner.java:525)
+	at org.junit.runners.ParentRunner.<init>(ParentRunner.java:102)
+	at org.junit.runners.BlockJUnit4ClassRunner.<init>(BlockJUnit4ClassRunner.java:84)
+	at org.junit.runners.JUnit4.<init>(JUnit4.java:23)
+	at org.junit.internal.builders.JUnit4Builder.runnerForClass(JUnit4Builder.java:10)
+	at org.junit.runners.model.RunnerBuilder.safeRunnerForClass(RunnerBuilder.java:70)
+	at org.junit.internal.builders.AllDefaultPossibilitiesBuilder.runnerForClass(AllDefaultPossibilitiesBuilder.java:37)
+	at org.junit.runners.model.RunnerBuilder.safeRunnerForClass(RunnerBuilder.java:70)
+	at org.junit.internal.requests.ClassRequest.createRunner(ClassRequest.java:28)
+	at org.junit.internal.requests.MemoizingRequest.getRunner(MemoizingRequest.java:19)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.execute(JUnit4Provider.java:250)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:141)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:112)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.apache.maven.surefire.util.ReflectionUtils.invokeMethodWithArray(ReflectionUtils.java:189)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:165)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:85)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:115)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:75)
+
